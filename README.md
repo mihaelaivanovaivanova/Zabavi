@@ -31,6 +31,21 @@ npm run dev
 - `src/config/site.ts` — единен конфигурационен обект за продукт, цена, доставка, FAQ, trust-съдържание
 - `src/lib` — валидация (Zod) и помощни функции
 
+## Брандинг
+
+Официалните SVG лога са в `public/brand/` и се зареждат през `src/components/brand/Logo.tsx` (проп `variant`):
+
+| Вариант | Файл | Употреба |
+| --- | --- | --- |
+| `wordmark` (по подразбиране) | `zabavi-wordmark.svg` | Хедър/футър, светъл фон |
+| `stacked` | `zabavi-wordmark-stacked.svg` | Квадратен формат, светъл фон |
+| `stacked-light` | `zabavi-wordmark-stacked-light.svg` | Квадратен формат, тъмен/бордо фон |
+| `lockup` | `zabavi-lockup.svg` | Wordmark + символа "II" |
+| `mark` | `zabavi-mark.svg` | Самостоятелен символ "II" — използва се и като favicon (`src/app/icon.svg`) |
+| `badge` | `zabavi-badge.svg` | Кръгъл печат/badge с пълния wordmark |
+
+Цветовата палитра (`src/app/globals.css`, `--color-burgundy-*` / `--color-accent-*`) е подравнена с точните цветове от логото.
+
 ## Какво работи
 
 - Пълен responsive landing funnel (13 секции) с конфигурируемо съдържание.
@@ -41,7 +56,6 @@ npm run dev
 
 ## Какво е мокнато / демонстрационно
 
-- **Логото** е типографски placeholder (компонент `src/components/brand/Logo.tsx`) до предоставяне на официалния SVG файл.
 - **Продуктовите снимки и 4 илюстрации** са placeholder блокове (`PlaceholderImage`), не реални изображения.
 - **Цената** е `null` (TBD) в `src/config/site.ts` — никъде не се показва или изчислява измислена сума.
 - **Плащанията** (карта през myPOS и наложен платеж) са изцяло симулирани — няма реален network call, няма истински credentials, никаква поръчка не се запазва извън in-memory demo repository (нулира се при рестарт).
@@ -52,5 +66,5 @@ npm run dev
 - Реална myPOS интеграция (Фаза 2): hosted payment page, верификация на нотификации по подпис съгласно официалната myPOS документация, идемпотентна обработка на webhook-и. Ще изисква sandbox/production credentials през environment variables (напр. `MYPOS_SID`, `MYPOS_WALLET_NUMBER`, `MYPOS_PRIVATE_KEY`) — никога hardcoded.
 - Истинска PostgreSQL база (Railway) зад съществуващите repository интерфейси.
 - BOX NOW интеграция зад `DeliveryMethod` абстракцията.
-- Реални продуктови снимки, илюстрации и SVG лого.
+- Реални продуктови снимки и илюстрации (логото вече е реалното от `public/brand/`).
 - Реална цена и условия за доставка/връщане.
