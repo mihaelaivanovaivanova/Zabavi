@@ -23,7 +23,7 @@ function FieldWrapper({ label, htmlFor, error, children }: FieldWrapperProps) {
   );
 }
 
-const inputClasses =
+export const inputClasses =
   "rounded-lg border border-lavender-200 bg-paper-50 px-4 py-2.5 text-ink-900 outline-none transition-colors focus:border-burgundy-500 focus:ring-2 focus:ring-burgundy-200 aria-[invalid=true]:border-burgundy-500";
 
 type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {

@@ -1,34 +1,21 @@
 "use client";
 
-import { useEffect, useId } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
-import { siteConfig } from "@/config/site";
-
-const WIDGET_SCRIPT_SRC = "https://widget-cdn.boxnow.bg/map-widget/client/v5.js";
-
-interface BoxNowWidgetSelection {
-  boxnowLockerId: string;
-  boxnowLockerAddressLine1: string;
-  boxnowLockerPostalCode: string;
-}
-
-interface BoxNowWidgetConfig {
-  parentElement: string;
-  buttonSelector: string;
-  afterSelect: (selected: BoxNowWidgetSelection) => void;
-  partnerId?: number;
-}
-
-declare global {
-  interface Window {
-    _bn_map_widget_config?: BoxNowWidgetConfig;
-  }
-}
+import { inputClasses } from "@/components/ui/Field";
 
 export interface BoxNowSelection {
   lockerId: string;
   addressLine1: string;
   postalCode: string;
+}
+
+interface BoxNowLockerOption {
+  id: string;
+  city: string;
+  addressLine1: string;
+  postalCode: string;
+  name: string;
 }
 
 interface BoxNowLockerPickerProps {
@@ -38,55 +25,101 @@ interface BoxNowLockerPickerProps {
 }
 
 /**
- * Embeds BOX NOW's official public map widget so the customer can pick a
- * real locker. The widget talks directly to BOX NOW's production location
- * data and needs no partner credentials — only the (future) shipment
- * creation call needs those. See docs: widget-v5.boxnow.bg/developers.
+ * Lists real BOX NOW lockers from their public, credential-free locations
+ * feed (proxied through /api/box-now/lockers) as a searchable dropdown,
+ * instead of embedding their map widget.
  */
 export function BoxNowLockerPicker({ selected, onSelect, error }: BoxNowLockerPickerProps) {
-  const rawId = useId();
-  const containerId = `boxnow-map-${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
-  const buttonClass = `boxnow-widget-button-${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const [lockers, setLockers] = useState<BoxNowLockerOption[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    window._bn_map_widget_config = {
-      parentElement: `#${containerId}`,
-      buttonSelector: `.${buttonClass}`,
-      partnerId: siteConfig.integrations.boxNow.partnerId,
-      afterSelect: (sel) => {
-        onSelect({
-          lockerId: sel.boxnowLockerId,
-          addressLine1: sel.boxnowLockerAddressLine1,
-          postalCode: sel.boxnowLockerPostalCode,
-        });
-      },
+    let cancelled = false;
+    fetch("/api/box-now/lockers")
+      .then((response) => {
+        if (!response.ok) throw new Error("failed to load lockers");
+        return response.json();
+      })
+      .then((data: { lockers: BoxNowLockerOption[] }) => {
+        if (!cancelled) setLockers(data.lockers);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      });
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    if (!document.querySelector(`script[src="${WIDGET_SCRIPT_SRC}"]`)) {
-      const script = document.createElement("script");
-      script.src = WIDGET_SCRIPT_SRC;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-  }, [containerId, buttonClass, onSelect]);
+  const filteredLockers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return [];
+    return lockers
+      .filter(
+        (locker) =>
+          locker.city.toLowerCase().includes(term) ||
+          locker.addressLine1.toLowerCase().includes(term) ||
+          locker.postalCode.includes(term) ||
+          locker.name.toLowerCase().includes(term),
+      )
+      .slice(0, 50);
+  }, [lockers, search]);
+
+  const selectedLocker = lockers.find((locker) => locker.id === selected?.lockerId);
+
+  function handleSelectChange(id: string) {
+    const locker = lockers.find((candidate) => candidate.id === id);
+    if (!locker) return;
+    onSelect({ lockerId: locker.id, addressLine1: `${locker.addressLine1}, ${locker.city}`, postalCode: locker.postalCode });
+  }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-ink-800">Автомат BOX NOW</span>
-        <Badge tone="neutral">Реална карта</Badge>
+        <Badge tone="neutral">Реални локации</Badge>
       </div>
-      <div id={containerId} />
-      <button
-        type="button"
-        className={`${buttonClass} inline-flex items-center justify-center rounded-full border border-lavender-300 bg-paper-50 px-5 py-2.5 text-sm font-medium text-burgundy-700 hover:bg-lavender-50`}
-      >
-        {selected ? "Смени автомата" : "Избери автомат на картата"}
-      </button>
-      {selected ? (
+
+      {loadError ? (
+        <p role="alert" className="text-sm text-burgundy-600">
+          Неуспешно зареждане на локациите на BOX NOW. Опитай да презаредиш страницата.
+        </p>
+      ) : (
+        <>
+          <input
+            type="text"
+            className={inputClasses}
+            placeholder="Търси по град, адрес или пощенски код…"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          {search.trim() ? (
+            <select
+              className={inputClasses}
+              size={Math.min(Math.max(filteredLockers.length, 1), 8)}
+              value={selected?.lockerId ?? ""}
+              onChange={(event) => handleSelectChange(event.target.value)}
+            >
+              {filteredLockers.length === 0 ? (
+                <option disabled>Няма намерени автомати за &quot;{search}&quot;</option>
+              ) : (
+                filteredLockers.map((locker) => (
+                  <option key={locker.id} value={locker.id}>
+                    {locker.city} — {locker.addressLine1} ({locker.postalCode})
+                  </option>
+                ))
+              )}
+            </select>
+          ) : (
+            <p className="text-sm text-ink-700">Напиши град, адрес или пощенски код, за да видиш автоматите.</p>
+          )}
+        </>
+      )}
+
+      {selectedLocker ? (
         <p className="text-sm text-ink-700">
-          Избран автомат: {selected.addressLine1}, {selected.postalCode}
+          Избран автомат: {selectedLocker.city} — {selectedLocker.addressLine1}, {selectedLocker.postalCode}
         </p>
       ) : null}
       {error ? (
