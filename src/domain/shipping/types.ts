@@ -33,10 +33,24 @@ export interface BoxNowShippingDetails {
 export type ShippingDetails = CourierShippingDetails | BoxNowShippingDetails;
 
 export interface ShipmentCreationResult {
-  demoNotice: string;
+  /** True once a real carrier API created the shipment; false for the demo/stub path. */
+  isLive: boolean;
+  /** User-facing notice: the demo disclaimer, or a confirmation referencing the real carrier response. */
+  notice: string;
+  /** Carrier's reference number for the created delivery request. Only set when isLive is true. */
+  referenceNumber?: string;
+  parcelIds?: string[];
 }
 
 export interface ShippingProvider {
   method: DeliveryMethodId;
   createShipment(order: OrderDraft): Promise<ShipmentCreationResult>;
 }
+
+/**
+ * Thrown by a live shipping provider when a shipment genuinely cannot be
+ * created (missing configuration, unconfirmed pricing, upstream API
+ * failure). Callers must surface this as an error response — never catch
+ * it and fall back to a fabricated success notice.
+ */
+export class ShippingProviderError extends Error {}

@@ -6,7 +6,8 @@ export class CourierStubProvider implements ShippingProvider {
 
   async createShipment(_order: OrderDraft): Promise<ShipmentCreationResult> {
     return {
-      demoNotice: "ДЕМО: тук в продукция куриер би поел пратката от склада за доставка до адреса.",
+      isLive: false,
+      notice: "ДЕМО: тук в продукция куриер би поел пратката от склада за доставка до адреса.",
     };
   }
 }

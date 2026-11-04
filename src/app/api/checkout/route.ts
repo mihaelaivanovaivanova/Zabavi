@@ -7,7 +7,7 @@ import { getShippingProvider } from "@/infrastructure/shipping/getShippingProvid
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
 import { product } from "@/config/site";
 import type { OrderDraft } from "@/domain/order/types";
-import type { ShippingDetails } from "@/domain/shipping/types";
+import { ShippingProviderError, type ShippingDetails } from "@/domain/shipping/types";
 
 /**
  * Demo checkout endpoint. Validates on the server, recomputes totals from
@@ -64,14 +64,23 @@ export async function POST(request: Request) {
   const paymentResult = await paymentProvider.createPayment(order);
 
   const shippingProvider = getShippingProvider(values.deliveryMethod);
-  const shippingResult = await shippingProvider.createShipment(order);
+  let shippingResult;
+  try {
+    shippingResult = await shippingProvider.createShipment(order);
+  } catch (error) {
+    if (error instanceof ShippingProviderError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 502 });
+    }
+    throw error;
+  }
 
   return NextResponse.json({
     success: true,
     demo: true,
+    shippingIsLive: shippingResult.isLive,
     orderId: order.id,
     totals,
     paymentNotice: paymentResult.demoNotice,
-    shippingNotice: shippingResult.demoNotice,
+    shippingNotice: shippingResult.notice,
   });
 }
