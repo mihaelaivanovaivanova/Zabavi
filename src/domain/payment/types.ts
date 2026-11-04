@@ -11,14 +11,20 @@ export type PaymentStatus = "pending" | "paid" | "failed";
 
 export interface PaymentAttemptResult {
   status: PaymentStatus;
-  /** User-facing demo disclaimer; always shown next to any payment UI in this prototype. */
-  demoNotice: string;
+  /** True once a real payment provider created a live attempt; false for the demo/stub path. */
+  isLive: boolean;
+  /** User-facing notice: the demo disclaimer, or real guidance (e.g. "complete payment below"). */
+  notice: string;
   redirectUrl?: string;
+  /** iCard payment widget token: embed it client-side instead of redirecting. Only set when isLive is true. */
+  widgetToken?: string;
 }
 
 export interface PaymentNotificationResult {
   verified: boolean;
   alreadyProcessed: boolean;
+  orderId?: string;
+  status?: PaymentStatus;
 }
 
 export interface PaymentMethodOption {
@@ -36,3 +42,11 @@ export interface PaymentProvider {
     signature: string,
   ): Promise<PaymentNotificationResult>;
 }
+
+/**
+ * Thrown by a live payment provider when a payment attempt genuinely cannot
+ * be created (missing configuration, unconfirmed pricing, missing required
+ * customer data, upstream API failure). Callers must surface this as an
+ * error response — never catch it and fall back to a fabricated success.
+ */
+export class PaymentProviderError extends Error {}

@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { checkoutSchema } from "@/lib/validation";
+import { getClientIp } from "@/lib/http";
 import { calculateTotals } from "@/domain/cart/calculateTotals";
 import { getPaymentProvider } from "@/infrastructure/payments/getPaymentProvider";
 import { getShippingProvider } from "@/infrastructure/shipping/getShippingProvider";
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
 import { product } from "@/config/site";
 import type { OrderDraft } from "@/domain/order/types";
+import { PaymentProviderError } from "@/domain/payment/types";
 import { ShippingProviderError, type ShippingDetails } from "@/domain/shipping/types";
 
 /**
  * Demo checkout endpoint. Validates on the server, recomputes totals from
  * `siteConfig` only (any price sent by the client is ignored), and returns
- * a clearly labeled demo result. No real payment or shipment is ever
- * created and no data leaves this server.
+ * a clearly labeled demo result unless a real payment/shipping provider is
+ * configured. No real payment or shipment is ever created silently — a
+ * real provider failure is surfaced as an error, never masked as success.
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -50,6 +53,11 @@ export async function POST(request: Request) {
   const order: OrderDraft = {
     id: randomUUID(),
     customer: { fullName: values.fullName, phone: values.phone, email: values.email || undefined },
+    customerIp: getClientIp(request),
+    billingAddress:
+      values.address && values.city && values.postalCode
+        ? { address: values.address, city: values.city, postalCode: values.postalCode }
+        : undefined,
     shippingDetails,
     giftMessage: values.giftMessage,
     items: [{ productSlug: product.slug, variantId: "standard", quantity: values.quantity }],
@@ -58,10 +66,17 @@ export async function POST(request: Request) {
     createdAt: new Date().toISOString(),
   };
 
-  await orderRepository.save(order);
-
   const paymentProvider = getPaymentProvider(values.paymentMethod);
-  const paymentResult = await paymentProvider.createPayment(order);
+  let paymentResult;
+  try {
+    paymentResult = await paymentProvider.createPayment(order);
+  } catch (error) {
+    if (error instanceof PaymentProviderError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 502 });
+    }
+    throw error;
+  }
+  order.paymentStatus = paymentResult.status;
 
   const shippingProvider = getShippingProvider(values.deliveryMethod);
   let shippingResult;
@@ -74,13 +89,17 @@ export async function POST(request: Request) {
     throw error;
   }
 
+  await orderRepository.save(order);
+
   return NextResponse.json({
     success: true,
     demo: true,
     shippingIsLive: shippingResult.isLive,
+    paymentIsLive: paymentResult.isLive,
     orderId: order.id,
     totals,
-    paymentNotice: paymentResult.demoNotice,
+    paymentNotice: paymentResult.notice,
+    paymentWidgetToken: paymentResult.widgetToken,
     shippingNotice: shippingResult.notice,
   });
 }

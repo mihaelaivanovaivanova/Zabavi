@@ -29,9 +29,12 @@ export const checkoutSchema = z
     quantity: z.number().int().min(1, "Количеството трябва да е поне 1.").max(10, "Максимум 10 броя."),
   })
   .superRefine((values, ctx) => {
-    if (values.deliveryMethod === "courier") {
+    // Billing address is required for courier delivery (it doubles as the shipping
+    // address) and also whenever card_icard is chosen — iCard's IPGPurchase requires
+    // a billing address regardless of delivery method (e.g. BOX NOW + card).
+    if (values.deliveryMethod === "courier" || values.paymentMethod === "card_icard") {
       if (!values.address || values.address.length < 5) {
-        ctx.addIssue({ code: "custom", path: ["address"], message: "Въведи адрес за доставка." });
+        ctx.addIssue({ code: "custom", path: ["address"], message: "Въведи адрес за фактуриране." });
       }
       if (!values.city || values.city.length < 2) {
         ctx.addIssue({ code: "custom", path: ["city"], message: "Въведи населено място." });
@@ -47,6 +50,11 @@ export const checkoutSchema = z
         path: ["boxNowLockerId"],
         message: "Избери автомат BOX NOW за доставка.",
       });
+    }
+
+    // iCard's IPGPurchase requires the cardholder's email.
+    if (values.paymentMethod === "card_icard" && !values.email) {
+      ctx.addIssue({ code: "custom", path: ["email"], message: "Имейл е задължителен за плащане с карта." });
     }
   });
 

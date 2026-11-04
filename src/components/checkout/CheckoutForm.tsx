@@ -9,6 +9,7 @@ import { InputField, TextareaField } from "@/components/ui/Field";
 import { AddressFields } from "@/components/checkout/AddressFields";
 import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/BoxNowLockerPicker";
 import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
+import { ICardPaymentWidget } from "@/components/checkout/ICardPaymentWidget";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/validation";
@@ -16,7 +17,15 @@ import { checkoutSchema, type CheckoutFormValues } from "@/lib/validation";
 type SubmitState =
   | { status: "idle" }
   | { status: "submitting" }
-  | { status: "success"; orderId: string; paymentNotice: string; shippingNotice: string }
+  | { status: "awaiting_card_payment"; orderId: string; widgetToken: string; shippingNotice: string }
+  | {
+      status: "success";
+      orderId: string;
+      paymentNotice: string;
+      shippingNotice: string;
+      paymentIsLive: boolean;
+      shippingIsLive: boolean;
+    }
   | { status: "error"; message: string };
 
 export function CheckoutForm() {
@@ -49,6 +58,7 @@ export function CheckoutForm() {
 
   const quantity = watch("quantity");
   const deliveryMethod = watch("deliveryMethod");
+  const paymentMethod = watch("paymentMethod");
   const boxNowLockerId = watch("boxNowLockerId");
   const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
   const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
@@ -80,28 +90,59 @@ export function CheckoutForm() {
         return;
       }
 
+      if (data.paymentWidgetToken) {
+        setSubmitState({
+          status: "awaiting_card_payment",
+          orderId: data.orderId,
+          widgetToken: data.paymentWidgetToken,
+          shippingNotice: data.shippingNotice,
+        });
+        return;
+      }
+
       setSubmitState({
         status: "success",
         orderId: data.orderId,
         paymentNotice: data.paymentNotice,
         shippingNotice: data.shippingNotice,
+        paymentIsLive: Boolean(data.paymentIsLive),
+        shippingIsLive: Boolean(data.shippingIsLive),
       });
     } catch {
       setSubmitState({ status: "error", message: "Нещо се обърка. Опитай отново." });
     }
   }
 
+  if (submitState.status === "awaiting_card_payment") {
+    return (
+      <div className="rounded-2xl border border-lavender-300 bg-paper-50 p-8">
+        <Badge tone="neutral">Плащане</Badge>
+        <h2 className="mt-4 text-2xl font-semibold text-ink-900">Завърши плащането</h2>
+        <p className="mt-3 text-ink-800">{submitState.shippingNotice}</p>
+        <div className="mt-6">
+          <ICardPaymentWidget token={submitState.widgetToken} />
+        </div>
+        <p className="mt-4 text-xs text-ink-700">ID на поръчката: {submitState.orderId}</p>
+      </div>
+    );
+  }
+
   if (submitState.status === "success") {
+    const isAnyPartLive = submitState.paymentIsLive || submitState.shippingIsLive;
     return (
       <div className="rounded-2xl border border-sage-300 bg-sage-50 p-8 text-center">
-        <Badge tone="neutral">Демо</Badge>
-        <h2 className="mt-4 text-2xl font-semibold text-ink-900">Демонстрацията е завършена</h2>
+        <Badge tone="neutral">{isAnyPartLive ? "Поръчка" : "Демо"}</Badge>
+        <h2 className="mt-4 text-2xl font-semibold text-ink-900">
+          {isAnyPartLive ? "Поръчката е приета" : "Демонстрацията е завършена"}
+        </h2>
         <p className="mt-3 text-ink-800">
-          Това е прототип на checkout. Няма подадена реална поръчка и не е извършено реално плащане.
+          {isAnyPartLive
+            ? "Част от обработката по-долу е реална; останалата остава демонстрационна, докато не бъдат зададени липсващите данни/credentials."
+            : "Това е прототип на checkout. Няма подадена реална поръчка и не е извършено реално плащане."}
         </p>
         <p className="mt-2 text-sm text-ink-700">{submitState.shippingNotice}</p>
         <p className="mt-2 text-sm text-ink-700">{submitState.paymentNotice}</p>
-        <p className="mt-4 text-xs text-ink-700">Демо ID: {submitState.orderId}</p>
+        <p className="mt-4 text-xs text-ink-700">{isAnyPartLive ? "ID" : "Демо ID"}: {submitState.orderId}</p>
       </div>
     );
   }
@@ -118,7 +159,7 @@ export function CheckoutForm() {
           <InputField label="Име и фамилия" {...register("fullName")} error={errors.fullName?.message} />
           <InputField label="Телефон" type="tel" {...register("phone")} error={errors.phone?.message} />
           <InputField
-            label="Имейл (незадължително)"
+            label={paymentMethod === "card_icard" ? "Имейл" : "Имейл (незадължително)"}
             type="email"
             {...register("email")}
             error={errors.email?.message}
@@ -146,6 +187,10 @@ export function CheckoutForm() {
         )}
 
         <PaymentMethodSelector register={() => register("paymentMethod")} />
+
+        {deliveryMethod === "box_now" && paymentMethod === "card_icard" ? (
+          <AddressFields register={register} errors={errors} title="Адрес за фактуриране" />
+        ) : null}
 
         <div className="space-y-4">
           <InputField

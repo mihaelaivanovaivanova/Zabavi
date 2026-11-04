@@ -11,7 +11,8 @@ export class CashOnDeliveryProvider implements PaymentProvider {
   async createPayment(_order: OrderDraft): Promise<PaymentAttemptResult> {
     return {
       status: "pending",
-      demoNotice: "ДЕМО: поръчката би била маркирана за плащане в брой при доставка.",
+      isLive: false,
+      notice: "ДЕМО: поръчката би била маркирана за плащане в брой при доставка.",
     };
   }
 
