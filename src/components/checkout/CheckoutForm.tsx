@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { InputField, TextareaField } from "@/components/ui/Field";
+import { AddressFields } from "@/components/checkout/AddressFields";
+import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/BoxNowLockerPicker";
 import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
@@ -14,7 +16,7 @@ import { checkoutSchema, type CheckoutFormValues } from "@/lib/validation";
 type SubmitState =
   | { status: "idle" }
   | { status: "submitting" }
-  | { status: "success"; orderId: string; paymentNotice: string }
+  | { status: "success"; orderId: string; paymentNotice: string; shippingNotice: string }
   | { status: "error"; message: string };
 
 export function CheckoutForm() {
@@ -24,6 +26,7 @@ export function CheckoutForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -35,6 +38,9 @@ export function CheckoutForm() {
       city: "",
       postalCode: "",
       deliveryMethod: "courier",
+      boxNowLockerId: "",
+      boxNowLockerAddressLine1: "",
+      boxNowLockerPostalCode: "",
       paymentMethod: "cash_on_delivery",
       giftMessage: "",
       quantity: 1,
@@ -42,6 +48,19 @@ export function CheckoutForm() {
   });
 
   const quantity = watch("quantity");
+  const deliveryMethod = watch("deliveryMethod");
+  const boxNowLockerId = watch("boxNowLockerId");
+  const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
+  const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
+
+  const handleLockerSelect = useCallback(
+    (selection: BoxNowSelection) => {
+      setValue("boxNowLockerId", selection.lockerId, { shouldValidate: true });
+      setValue("boxNowLockerAddressLine1", selection.addressLine1);
+      setValue("boxNowLockerPostalCode", selection.postalCode);
+    },
+    [setValue],
+  );
 
   async function onSubmit(values: CheckoutFormValues) {
     setSubmitState({ status: "submitting" });
@@ -61,7 +80,12 @@ export function CheckoutForm() {
         return;
       }
 
-      setSubmitState({ status: "success", orderId: data.orderId, paymentNotice: data.paymentNotice });
+      setSubmitState({
+        status: "success",
+        orderId: data.orderId,
+        paymentNotice: data.paymentNotice,
+        shippingNotice: data.shippingNotice,
+      });
     } catch {
       setSubmitState({ status: "error", message: "Нещо се обърка. Опитай отново." });
     }
@@ -75,6 +99,7 @@ export function CheckoutForm() {
         <p className="mt-3 text-ink-800">
           Това е прототип на checkout. Няма подадена реална поръчка и не е извършено реално плащане.
         </p>
+        <p className="mt-2 text-sm text-ink-700">{submitState.shippingNotice}</p>
         <p className="mt-2 text-sm text-ink-700">{submitState.paymentNotice}</p>
         <p className="mt-4 text-xs text-ink-700">Демо ID: {submitState.orderId}</p>
       </div>
@@ -100,20 +125,26 @@ export function CheckoutForm() {
           />
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-ink-900">Адрес за доставка</h2>
-          <InputField label="Адрес" {...register("address")} error={errors.address?.message} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <InputField label="Град" {...register("city")} error={errors.city?.message} />
-            <InputField
-              label="Пощенски код"
-              {...register("postalCode")}
-              error={errors.postalCode?.message}
-            />
-          </div>
-        </div>
-
         <DeliveryMethodSelector register={() => register("deliveryMethod")} />
+
+        {deliveryMethod === "box_now" ? (
+          <BoxNowLockerPicker
+            selected={
+              boxNowLockerId
+                ? {
+                    lockerId: boxNowLockerId,
+                    addressLine1: boxNowLockerAddressLine1 ?? "",
+                    postalCode: boxNowLockerPostalCode ?? "",
+                  }
+                : null
+            }
+            onSelect={handleLockerSelect}
+            error={errors.boxNowLockerId?.message}
+          />
+        ) : (
+          <AddressFields register={register} errors={errors} />
+        )}
+
         <PaymentMethodSelector register={() => register("paymentMethod")} />
 
         <div className="space-y-4">

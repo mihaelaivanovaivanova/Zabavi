@@ -19,6 +19,12 @@ export const siteConfig = {
   contact: {
     email: "hello@zabavi.example",
   },
+  integrations: {
+    boxNow: {
+      /** Set once BOX NOW issues a partner ID after merchant registration (integrationsupport@boxnow.bg). */
+      partnerId: undefined as number | undefined,
+    },
+  },
 } as const;
 
 export const product: Product = {
@@ -80,8 +86,8 @@ export const deliveryMethods: DeliveryMethod[] = [
   {
     id: "box_now",
     label: "BOX NOW — автомат за пратки",
-    description: "Очаквайте скоро.",
-    available: false,
+    description: "Избери автомат за доставка чрез официалната карта на BOX NOW.",
+    available: true,
   },
 ];
 

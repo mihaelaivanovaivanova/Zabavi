@@ -5,8 +5,7 @@ import type { OrderDraft } from "@/domain/order/types";
 const order: OrderDraft = {
   id: "order-1",
   customer: { fullName: "Иван Иванов", phone: "0888123456" },
-  shippingAddress: { address: "ул. Примерна 1", city: "София", postalCode: "1000" },
-  deliveryMethod: "courier",
+  shippingDetails: { method: "courier", address: "ул. Примерна 1", city: "София", postalCode: "1000" },
   items: [{ productSlug: "akvarelen-nabor", variantId: "standard", quantity: 1 }],
   paymentMethod: "cash_on_delivery",
   status: "pending",

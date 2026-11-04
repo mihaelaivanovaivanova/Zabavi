@@ -39,4 +39,29 @@ describe("checkoutSchema", () => {
     const result = checkoutSchema.safeParse({ ...validInput, deliveryMethod: "drone" });
     expect(result.success).toBe(false);
   });
+
+  it("rejects box_now delivery without a selected locker", () => {
+    const result = checkoutSchema.safeParse({
+      ...validInput,
+      deliveryMethod: "box_now",
+      address: undefined,
+      city: undefined,
+      postalCode: undefined,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts box_now delivery with a selected locker and no street address", () => {
+    const result = checkoutSchema.safeParse({
+      ...validInput,
+      deliveryMethod: "box_now",
+      address: undefined,
+      city: undefined,
+      postalCode: undefined,
+      boxNowLockerId: "LOCKER-42",
+      boxNowLockerAddressLine1: "ул. Тест 5",
+      boxNowLockerPostalCode: "1000",
+    });
+    expect(result.success).toBe(true);
+  });
 });
