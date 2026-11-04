@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf7f2;
+  --foreground: #2b2630;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-inter);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-lavender-50: #f6f3fb;
+  --color-lavender-100: #ede7f6;
+  --color-lavender-200: #d9cfec;
+  --color-lavender-300: #c2b2de;
+  --color-lavender-400: #a994ce;
+  --color-lavender-500: #8e76bc;
+  --color-lavender-600: #7259a3;
+  --color-lavender-700: #5b4784;
+  --color-lavender-800: #453564;
+  --color-lavender-900: #2f2444;
+
+  --color-burgundy-50: #fbf0f3;
+  --color-burgundy-100: #f4d9e1;
+  --color-burgundy-200: #e3a9bb;
+  --color-burgundy-300: #c97390;
+  --color-burgundy-400: #a84964;
+  --color-burgundy-500: #8c3153;
+  --color-burgundy-600: #7a2744;
+  --color-burgundy-700: #5e1e35;
+  --color-burgundy-800: #3f1424;
+  --color-burgundy-900: #2a0d18;
+
+  --color-sage-50: #f3f6f1;
+  --color-sage-100: #e3eae0;
+  --color-sage-200: #c8d5c1;
+  --color-sage-300: #b9c9b1;
+  --color-sage-400: #9bb08f;
+  --color-sage-500: #7e9472;
+  --color-sage-600: #67795d;
+  --color-sage-700: #5c7052;
+  --color-sage-800: #435240;
+  --color-sage-900: #2d382a;
+
+  --color-accent-300: #f0a66e;
+  --color-accent-400: #e8833a;
+  --color-accent-500: #e2793a;
+  --color-accent-600: #c4602a;
+
+  --color-paper-50: #fefdfb;
+  --color-paper-100: #faf7f2;
+  --color-paper-200: #f3ede2;
+  --color-paper-300: #e8ddc9;
+
+  --color-ink-700: #453f4c;
+  --color-ink-800: #352f3c;
+  --color-ink-900: #2b2630;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif);
 }

@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ЗАБАВЍ (ZABAVI)
 
-## Getting Started
+Мобилно-ориентиран landing/sales funnel и checkout демо за премиум творческия подарък на ЗАБАВЍ — акварелен creative kit.
 
-First, run the development server:
+## Стартиране
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Отвори [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Налични команди
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Команда | Описание |
+| --- | --- |
+| `npm run dev` | Development сървър (Next.js, Turbopack) |
+| `npm run build` | Production build |
+| `npm run start` | Стартира production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run test` | Unit тестове (Vitest) |
 
-## Learn More
+## Структура
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app` — страници и route handlers (App Router)
+- `src/domain` — framework-agnostic бизнес логика (продукт, количка, поръчка, доставка, плащане)
+- `src/infrastructure` — заменими имплементации (mock платежни провайдъри, in-memory repository)
+- `src/components` — UI компоненти (`landing`, `checkout`, `brand`, `ui`, `legal`)
+- `src/config/site.ts` — единен конфигурационен обект за продукт, цена, доставка, FAQ, trust-съдържание
+- `src/lib` — валидация (Zod) и помощни функции
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Какво работи
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Пълен responsive landing funnel (13 секции) с конфигурируемо съдържание.
+- Checkout демо: guest-only форма с валидация (React Hook Form + Zod), избор на количество, доставка, плащане и лично послание.
+- Сървърен `/api/checkout` endpoint: валидира отново на сървъра, прекалкулира totals само от `src/config/site.ts` (никога не вярва на цена от клиента) и връща ясно обозначен демо резултат.
+- Payment provider абстракция (`PaymentProvider`) с два mock провайдъра — `MyPosStubProvider` и `CashOnDeliveryProvider` — готова да се замени с реална myPOS интеграция без промяна на останалия код.
+- Unit тестове за ценообразуване, валидация и избор на payment provider.
 
-## Deploy on Vercel
+## Какво е мокнато / демонстрационно
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Логото** е типографски placeholder (компонент `src/components/brand/Logo.tsx`) до предоставяне на официалния SVG файл.
+- **Продуктовите снимки и 4 илюстрации** са placeholder блокове (`PlaceholderImage`), не реални изображения.
+- **Цената** е `null` (TBD) в `src/config/site.ts` — никъде не се показва или изчислява измислена сума.
+- **Плащанията** (карта през myPOS и наложен платеж) са изцяло симулирани — няма реален network call, няма истински credentials, никаква поръчка не се запазва извън in-memory demo repository (нулира се при рестарт).
+- **Доставка, връщане, FAQ детайли** съдържат placeholder текст, маркиран ясно като "предстои да се зададе" — без измислени факти, гаранции или stock urgency.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Предстои (извън обхвата на тази фаза)
+
+- Реална myPOS интеграция (Фаза 2): hosted payment page, верификация на нотификации по подпис съгласно официалната myPOS документация, идемпотентна обработка на webhook-и. Ще изисква sandbox/production credentials през environment variables (напр. `MYPOS_SID`, `MYPOS_WALLET_NUMBER`, `MYPOS_PRIVATE_KEY`) — никога hardcoded.
+- Истинска PostgreSQL база (Railway) зад съществуващите repository интерфейси.
+- BOX NOW интеграция зад `DeliveryMethod` абстракцията.
+- Реални продуктови снимки, илюстрации и SVG лого.
+- Реална цена и условия за доставка/връщане.
