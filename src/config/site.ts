@@ -93,8 +93,8 @@ export const deliveryMethods: DeliveryMethod[] = [
 
 export const paymentMethods: PaymentMethodOption[] = [
   {
-    id: "card_mypos",
-    label: "Карта (myPOS)",
+    id: "card_icard",
+    label: "Карта (iCard)",
     description: "Сигурно онлайн разплащане с карта. В тази демонстрация плащането не се обработва реално.",
     isDemo: true,
   },
@@ -135,5 +135,5 @@ export const faq: FaqItem[] = [
 export const trustContent = {
   shipping: "Информация за срокове и цени на доставка: предстои да се добави.",
   returns: "Условия за връщане и рекламации: предстои да се добави.",
-  payment: "Приемаме плащане с карта (чрез myPOS) и наложен платеж. Подробности предстои да се добавят.",
+  payment: "Приемаме плащане с карта (чрез iCard) и наложен платеж. Подробности предстои да се добавят.",
 };

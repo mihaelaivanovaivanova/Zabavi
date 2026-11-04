@@ -1,11 +1,11 @@
 import type { OrderDraft } from "@/domain/order/types";
 
-export type PaymentMethodId = "card_mypos" | "cash_on_delivery";
+export type PaymentMethodId = "card_icard" | "cash_on_delivery";
 
 /**
  * Deliberately separate from OrderStatus: an order can be "confirmed" while
  * its payment is still "pending" (cash on delivery) and the two must never
- * be conflated when the real myPOS integration lands in Phase 2.
+ * be conflated when the real iCard integration lands in Phase 2.
  */
 export type PaymentStatus = "pending" | "paid" | "failed";
 

@@ -24,7 +24,7 @@ export const checkoutSchema = z
     boxNowLockerId: z.string().trim().optional(),
     boxNowLockerAddressLine1: z.string().trim().optional(),
     boxNowLockerPostalCode: z.string().trim().optional(),
-    paymentMethod: z.enum(["card_mypos", "cash_on_delivery"]),
+    paymentMethod: z.enum(["card_icard", "cash_on_delivery"]),
     giftMessage: z.string().trim().max(300, "Личното послание е твърде дълго.").optional(),
     quantity: z.number().int().min(1, "Количеството трябва да е поне 1.").max(10, "Максимум 10 броя."),
   })

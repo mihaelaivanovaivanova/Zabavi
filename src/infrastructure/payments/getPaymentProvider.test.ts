@@ -13,9 +13,9 @@ const order: OrderDraft = {
 };
 
 describe("getPaymentProvider", () => {
-  it("resolves the myPOS stub provider for card_mypos without requiring real credentials", async () => {
-    const provider = getPaymentProvider("card_mypos");
-    expect(provider.method).toBe("card_mypos");
+  it("resolves the iCard stub provider for card_icard without requiring real credentials", async () => {
+    const provider = getPaymentProvider("card_icard");
+    expect(provider.method).toBe("card_icard");
     const result = await provider.createPayment(order);
     expect(result.status).toBe("pending");
     expect(result.demoNotice).toMatch(/ДЕМО/);

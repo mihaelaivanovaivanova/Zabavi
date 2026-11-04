@@ -1,5 +1,5 @@
 /**
- * Tracks processed myPOS notification IDs so a retried webhook never
+ * Tracks processed iCard notification IDs so a retried webhook never
  * applies the same payment twice. In-memory for the demo; Phase 2 should
  * back this with a persistent store shared across server instances.
  */

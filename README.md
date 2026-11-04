@@ -57,14 +57,14 @@ npm run dev
   - `getShippingProvider("box_now")` връща `BoxNowApiProvider` автоматично щом всички тези environment variables са зададени; иначе продължава да връща `BoxNowStubProvider` (демо резултат с реалния избран locker ID) — checkout-ът никога не твърди, че е подадена реална пратка, без да е.
   - **Защита срещу измислена цена**: `BoxNowApiProvider` отказва да създаде реална пратка, докато `priceBgn` в `src/config/site.ts` е `null` (TBD) — `invoiceValue`/`amountToBeCollected` в BOX NOW заявката не могат да се базират на измислена сума. Хвърля ясна грешка вместо да подаде `0.00` или друга фиктивна стойност.
   - При грешка от BOX NOW API (мрежова, 401, 400 и т.н.) `/api/checkout` връща `502` с честно съобщение за грешка — никога не превръща провалено реално извикване в фалшив "успех".
-- **Webhook за събития на пратка** (CloudEvents формат) — наръчникът не документира криптографска подпис-верификация за него (за разлика от myPOS notification signing), само изисква да се предостави URL на BOX NOW. Затова webhook обработката остава извън обхвата на тази фаза — преди да се изгради, трябва да се потвърди с integrationsupport@boxnow.bg как точно се удостоверява подателят.
+- **Webhook за събития на пратка** (CloudEvents формат) — наръчникът не документира криптографска подпис-верификация за него (за разлика от iCard notification signing), само изисква да се предостави URL на BOX NOW. Затова webhook обработката остава извън обхвата на тази фаза — преди да се изгради, трябва да се потвърди с integrationsupport@boxnow.bg как точно се удостоверява подателят.
 
 ## Какво работи
 
 - Пълен responsive landing funnel (13 секции) с конфигурируемо съдържание.
 - Checkout демо: guest-only форма с валидация (React Hook Form + Zod), избор на количество, доставка, плащане и лично послание.
 - Сървърен `/api/checkout` endpoint: валидира отново на сървъра, прекалкулира totals само от `src/config/site.ts` (никога не вярва на цена от клиента) и връща ясно обозначен демо резултат.
-- Payment provider абстракция (`PaymentProvider`) с два mock провайдъра — `MyPosStubProvider` и `CashOnDeliveryProvider` — готова да се замени с реална myPOS интеграция без промяна на останалия код.
+- Payment provider абстракция (`PaymentProvider`) с два mock провайдъра — `ICardStubProvider` и `CashOnDeliveryProvider` — готова да се замени с реална iCard интеграция без промяна на останалия код.
 - **BOX NOW избор на автомат** — реална интеграция с официалния публичен map widget на BOX NOW (`src/components/checkout/BoxNowLockerPicker.tsx`). Клиентът вижда истински автомати (локации, адреси, наличност) от продукционните данни на BOX NOW и избира реален `lockerId` — без да са нужни partner credentials за самия widget.
 - **BOX NOW реално създаване на пратка** (`BoxNowApiProvider`) — пълна имплементация на OAuth2 + `POST /api/v1/delivery-requests`, активира се автоматично щом partner credentials са зададени в environment variables (виж по-горе). Все още неактивна в тази демонстрация, защото (а) не са зададени credentials и (б) истинската цена на продукта е TBD — пратка не може да се заяви с измислена фактурна стойност.
 - Unit тестове за ценообразуване, валидация, избор на payment/shipping provider, и за самия BOX NOW API клиент (мокнат `fetch`, проверка на OAuth token flow и заявката за пратка).
@@ -73,14 +73,14 @@ npm run dev
 
 - **Продуктовите снимки и 4 илюстрации** са placeholder блокове (`PlaceholderImage`), не реални изображения.
 - **Цената** е `null` (TBD) в `src/config/site.ts` — никъде не се показва или изчислява измислена сума.
-- **Плащанията** (карта през myPOS и наложен платеж) са изцяло симулирани — няма реален network call, няма истински credentials, никаква поръчка не се запазва извън in-memory demo repository (нулира се при рестарт).
+- **Плащанията** (карта през iCard и наложен платеж) са изцяло симулирани — няма реален network call, няма истински credentials, никаква поръчка не се запазва извън in-memory demo repository (нулира се при рестарт).
 - **Създаването на пратка с куриер** е симулирано (`CourierStubProvider`) — за куриер няма конкретен избран производствен партньор/API все още.
 - **Създаването на пратка с BOX NOW** има реален код (`BoxNowApiProvider`), но е неактивно в тази демонстрация: няма partner credentials и цената е TBD, затова `getShippingProvider` връща `BoxNowStubProvider`. Изборът на автомат (widget-ът) си остава реален.
 - **Доставка (куриер), връщане, FAQ детайли** съдържат placeholder текст, маркиран ясно като "предстои да се зададе" — без измислени факти, гаранции или stock urgency.
 
 ## Предстои (извън обхвата на тази фаза)
 
-- Реална myPOS интеграция (Фаза 2): hosted payment page, верификация на нотификации по подпис съгласно официалната myPOS документация, идемпотентна обработка на webhook-и. Ще изисква sandbox/production credentials през environment variables (напр. `MYPOS_SID`, `MYPOS_WALLET_NUMBER`, `MYPOS_PRIVATE_KEY`) — никога hardcoded.
+- Реална iCard интеграция (Фаза 2): hosted payment page, верификация на нотификации по подпис съгласно официалната iCard документация, идемпотентна обработка на webhook-и. Ще изисква sandbox/production credentials през environment variables (точните имена — след преглед на официалната iCard документация) — никога hardcoded.
 - Истинска PostgreSQL база (Railway) зад съществуващите repository интерфейси.
 - Активиране на реалното създаване на пратка през BOX NOW API: кодът е готов (`BoxNowApiProvider`), но е нужна партньорска регистрация с BOX NOW (credentials) и реална цена на продукта. Webhook за проследяване на пратка остава да се изгради, след потвърждение от BOX NOW как се удостоверява подателят. Изборът на автомат вече е реален (виж по-горе).
 - Реални продуктови снимки и илюстрации (логото вече е реалното от `public/brand/`).

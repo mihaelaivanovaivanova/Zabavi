@@ -1,9 +1,9 @@
 import type { PaymentMethodId, PaymentProvider } from "@/domain/payment/types";
 import { CashOnDeliveryProvider } from "@/infrastructure/payments/mock/cashOnDeliveryProvider";
-import { MyPosStubProvider } from "@/infrastructure/payments/mock/myPosStubProvider";
+import { ICardStubProvider } from "@/infrastructure/payments/mock/iCardStubProvider";
 
 const providers: Record<PaymentMethodId, PaymentProvider> = {
-  card_mypos: new MyPosStubProvider(),
+  card_icard: new ICardStubProvider(),
   cash_on_delivery: new CashOnDeliveryProvider(),
 };
 

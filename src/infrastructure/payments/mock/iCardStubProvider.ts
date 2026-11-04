@@ -6,20 +6,20 @@ import type {
 } from "@/domain/payment/types";
 
 /**
- * Phase 1 stand-in for the production myPOS integration. It never contacts
- * myPOS, never handles real credentials and always returns a demo result.
+ * Phase 1 stand-in for the production iCard integration. It never contacts
+ * iCard, never handles real credentials and always returns a demo result.
  * Phase 2 replaces this with a real client built against the official
- * myPOS integration documentation, including signature-verified
+ * iCard integration documentation, including signature-verified
  * notifications and idempotent processing.
  */
-export class MyPosStubProvider implements PaymentProvider {
-  readonly method = "card_mypos" as const;
+export class ICardStubProvider implements PaymentProvider {
+  readonly method = "card_icard" as const;
 
   async createPayment(_order: OrderDraft): Promise<PaymentAttemptResult> {
     return {
       status: "pending",
       demoNotice:
-        "ДЕМО: тук в продукция потребителят би бил пренасочен към хоствана страница на myPOS за плащане с карта. Няма извършено реално плащане.",
+        "ДЕМО: тук в продукция потребителят би бил пренасочен към хоствана страница на iCard за плащане с карта. Няма извършено реално плащане.",
     };
   }
 
