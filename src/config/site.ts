@@ -1,6 +1,6 @@
 import type { DeliveryMethod } from "@/domain/shipping/types";
 import type { PaymentMethodOption } from "@/domain/payment/types";
-import type { Product } from "@/domain/product/types";
+import type { Product, Testimonial } from "@/domain/product/types";
 
 /**
  * Single source of truth for all public-facing content. Nothing here is
@@ -23,14 +23,28 @@ export const siteConfig = {
 
 export const product: Product = {
   slug: "akvarelen-nabor",
-  name: "Премиум акварелен creative kit",
-  tagline: "Кутия с четири платна, шест цвета и една покана да забавиш темпото",
+  name: "Комплект „Извън очертанията“",
+  tagline: "Свобода да пробваш, дори когато започваш с готови контури",
   description:
     "Цялостен комплект за рисуване с акварел, създаден за начинаещи и за всеки, който иска спокоен творчески момент — със всичко необходимо вътре, елегантно опаковано като подарък.",
-  heroImage: {
-    label: "Снимка на опакования комплект",
-    alt: "Опакован акварелен creative kit ЗАБАВЍ с панделка",
-  },
+  gallery: [
+    {
+      label: "Снимка на опакования комплект",
+      alt: "Опакован акварелен creative kit ЗАБАВЍ с панделка",
+    },
+    {
+      label: "Съдържанието на кутията, подредено",
+      alt: "Платна, бои, четка, палитра и съд за вода, подредени до отворената кутия",
+    },
+    {
+      label: "Детайл от илюстрация с акварел",
+      alt: "Близък план на частично оцветена акварелна илюстрация от комплекта",
+    },
+    {
+      label: "Комплектът като подарък",
+      alt: "Опакованият комплект, поднесен като подарък с панделка",
+    },
+  ],
   boxContents: [
     "4 оригинални илюстрации с контури, подходящи за начинаещи",
     "6 координирани акварелни цвета, поднесени като цветни капки",
@@ -39,6 +53,7 @@ export const product: Product = {
     "Малък съд за вода",
     "Елегантна подаръчна опаковка с панделка и място за лично послание",
   ],
+  highlights: ["Авторски акварели", "Висококачествени материали", "Всичко необходимо за цялостно завършване"],
   illustrations: [
     {
       title: "Илюстрация №1",
@@ -61,10 +76,49 @@ export const product: Product = {
       image: { label: "Илюстрация №4", alt: "Контурна скица №4 от комплекта" },
     },
   ],
-  variants: [{ id: "standard", label: "Стандартен комплект" }],
-  priceBgn: null,
+  variants: [
+    { id: "christmas-magic", label: "Магията на Коледа" },
+    { id: "calm-moments", label: "Мигове спокойствие" },
+  ],
   currency: "BGN",
+  rating: 5,
 };
+
+/**
+ * Real quotes from real customers (collected before the site existed).
+ */
+export const testimonials: Testimonial[] = [
+  {
+    author: "Симона Стойчева",
+    quote: "Много ми хареса! Помислено е за всичко и не трябваше да губя време за подготовки, просто си рисуваш!",
+  },
+  {
+    author: "Красимира Христова",
+    quote: "Взех го за подарък и май доста се хареса :)",
+  },
+  {
+    author: "Руслана Иванова",
+    quote:
+      "Видеата към всяка картинка ми бяха много полезни, никога не бях рисувала с акварел и пак се получиха супер!",
+  },
+  {
+    author: "Кристина Маринова",
+    quote: "Отдавна не бях релаксирала и поччивала така",
+  },
+  {
+    author: "Даниел Горанов",
+    quote: "Гаджето много му се зарадва",
+  },
+  {
+    author: "Михаела Димитрова",
+    quote:
+      "Все се канех да започна пак да рисувам и все си намирах извинения. Този комплект го направи супер лесно - просто го отворих и започнах",
+  },
+  {
+    author: "Симона Георгиева",
+    quote: "Взех го за подарък за мама - тя много му се зарадва и вече си е сложила в рамка две от картините :)",
+  },
+];
 
 export function getProductBySlug(slug: string): Product | undefined {
   return slug === product.slug ? product : undefined;

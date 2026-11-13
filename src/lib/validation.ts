@@ -1,7 +1,11 @@
 import { z } from "zod";
+import { product } from "@/config/site";
+
+const variantIds = product.variants.map((variant) => variant.id) as [string, ...string[]];
 
 export const checkoutSchema = z
   .object({
+    variantId: z.enum(variantIds),
     fullName: z
       .string()
       .trim()

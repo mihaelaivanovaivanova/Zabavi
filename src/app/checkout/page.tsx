@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
@@ -17,7 +18,9 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-semibold text-ink-900">Завърши поръчката</h1>
           <p className="mt-2 text-ink-700">Гостово плащане — не е необходим акаунт.</p>
           <div className="mt-10">
-            <CheckoutForm />
+            <Suspense fallback={null}>
+              <CheckoutForm />
+            </Suspense>
           </div>
         </Container>
       </main>

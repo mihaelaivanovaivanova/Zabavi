@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { checkoutSchema } from "@/lib/validation";
 import { getClientIp } from "@/lib/http";
+import { generateOrderNumber } from "@/lib/orderNumber";
 import { calculateTotals } from "@/domain/cart/calculateTotals";
 import { getPaymentProvider } from "@/infrastructure/payments/getPaymentProvider";
 import { getShippingProvider } from "@/infrastructure/shipping/getShippingProvider";
@@ -31,8 +32,8 @@ export async function POST(request: Request) {
 
   const values = parsed.data;
 
-  const totals = calculateTotals([
-    { productSlug: product.slug, variantId: "standard", quantity: values.quantity },
+  const totals = await calculateTotals([
+    { productSlug: product.slug, variantId: values.variantId, quantity: values.quantity },
   ]);
 
   const shippingDetails: ShippingDetails =
@@ -50,8 +51,10 @@ export async function POST(request: Request) {
           postalCode: values.postalCode ?? "",
         };
 
+  const createdAt = new Date();
   const order: OrderDraft = {
     id: randomUUID(),
+    orderNumber: generateOrderNumber(createdAt),
     customer: { fullName: values.fullName, phone: values.phone, email: values.email || undefined },
     customerIp: getClientIp(request),
     billingAddress:
@@ -60,10 +63,10 @@ export async function POST(request: Request) {
         : undefined,
     shippingDetails,
     giftMessage: values.giftMessage,
-    items: [{ productSlug: product.slug, variantId: "standard", quantity: values.quantity }],
+    items: [{ productSlug: product.slug, variantId: values.variantId, quantity: values.quantity }],
     paymentMethod: values.paymentMethod,
     status: "pending",
-    createdAt: new Date().toISOString(),
+    createdAt: createdAt.toISOString(),
   };
 
   const paymentProvider = getPaymentProvider(values.paymentMethod);

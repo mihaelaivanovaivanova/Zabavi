@@ -20,9 +20,9 @@ const sources: Record<Required<LogoProps>["variant"], { src: string; width: numb
   badge: { src: "/brand/zabavi-badge.svg", width: 1254, height: 1254 },
 };
 
-export function Logo({ className = "", variant = "wordmark" }: LogoProps) {
+export function Logo({ className, variant = "wordmark" }: LogoProps) {
   const { src, width, height } = sources[variant];
 
   // eslint-disable-next-line @next/next/no-img-element -- static brand SVG, rendered as a crisp vector, not an optimized raster
-  return <img src={src} alt="ЗАБАВЍ" width={width} height={height} className={`h-8 w-auto ${className}`} />;
+  return <img src={src} alt="ЗАБАВЍ" width={width} height={height} className={className ?? "h-8 w-auto"} />;
 }

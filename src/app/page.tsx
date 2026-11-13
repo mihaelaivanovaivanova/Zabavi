@@ -7,6 +7,7 @@ import { IllustrationsShowcase } from "@/components/landing/IllustrationsShowcas
 import { Benefits } from "@/components/landing/Benefits";
 import { GiftingScenarios } from "@/components/landing/GiftingScenarios";
 import { ProductOffer } from "@/components/landing/ProductOffer";
+import { Testimonials } from "@/components/landing/Testimonials";
 import { Faq } from "@/components/landing/Faq";
 import { TrustAndDelivery } from "@/components/landing/TrustAndDelivery";
 import { FinalCta } from "@/components/landing/FinalCta";
@@ -25,6 +26,7 @@ export default function HomePage() {
         <Benefits />
         <GiftingScenarios />
         <ProductOffer />
+        <Testimonials />
         <Faq />
         <TrustAndDelivery />
         <FinalCta />

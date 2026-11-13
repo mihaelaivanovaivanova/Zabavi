@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { checkoutSchema } from "@/lib/validation";
 
 const validInput = {
+  variantId: "christmas-magic",
   fullName: "Иван Иванов",
   phone: "0888123456",
   email: "",

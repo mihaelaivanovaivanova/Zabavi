@@ -40,6 +40,9 @@ yarn-error.log*
 # playwright-cli local session artifacts
 .playwright-cli/
 
+# admin-uploaded kit images — local disk storage, not source-controlled
+/uploads/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

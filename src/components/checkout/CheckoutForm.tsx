@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/Badge";
@@ -11,8 +12,11 @@ import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/
 import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
 import { ICardPaymentWidget } from "@/components/checkout/ICardPaymentWidget";
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
+import { VariantSelector } from "@/components/checkout/VariantSelector";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/validation";
+import { product } from "@/config/site";
+import { useKits } from "@/lib/useKits";
 
 type SubmitState =
   | { status: "idle" }
@@ -30,6 +34,13 @@ type SubmitState =
 
 export function CheckoutForm() {
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
+  const searchParams = useSearchParams();
+  const requestedVariant = searchParams.get("variant");
+  const defaultVariantId =
+    product.variants.find((variant) => variant.id === requestedVariant)?.id ?? product.variants[0].id;
+  const requestedQuantity = Number(searchParams.get("quantity"));
+  const defaultQuantity =
+    Number.isInteger(requestedQuantity) && requestedQuantity >= 1 && requestedQuantity <= 10 ? requestedQuantity : 1;
 
   const {
     register,
@@ -40,6 +51,7 @@ export function CheckoutForm() {
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
+      variantId: defaultVariantId,
       fullName: "",
       phone: "",
       email: "",
@@ -52,16 +64,19 @@ export function CheckoutForm() {
       boxNowLockerPostalCode: "",
       paymentMethod: "cash_on_delivery",
       giftMessage: "",
-      quantity: 1,
+      quantity: defaultQuantity,
     },
   });
 
+  const variantId = watch("variantId");
   const quantity = watch("quantity");
   const deliveryMethod = watch("deliveryMethod");
   const paymentMethod = watch("paymentMethod");
   const boxNowLockerId = watch("boxNowLockerId");
   const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
   const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
+  const { kits } = useKits();
+  const activeKitPriceBgn = kits.find((kit) => kit.variantId === variantId)?.priceBgn ?? null;
 
   const handleLockerSelect = useCallback(
     (selection: BoxNowSelection) => {
@@ -154,6 +169,8 @@ export function CheckoutForm() {
           Това е демонстрационен checkout. Не се подава реална поръчка и не се обработва реално плащане.
         </div>
 
+        <VariantSelector register={() => register("variantId")} />
+
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-ink-900">Данни за контакт</h2>
           <InputField label="Име и фамилия" {...register("fullName")} error={errors.fullName?.message} />
@@ -220,7 +237,11 @@ export function CheckoutForm() {
       </div>
 
       <div>
-        <OrderSummary quantity={Number(quantity) || 1} />
+        <OrderSummary
+          quantity={Number(quantity) || 1}
+          variantLabel={product.variants.find((variant) => variant.id === variantId)?.label}
+          priceBgn={activeKitPriceBgn}
+        />
       </div>
     </form>
   );

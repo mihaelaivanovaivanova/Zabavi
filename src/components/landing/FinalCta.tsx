@@ -8,7 +8,7 @@ export function FinalCta() {
       <p className="mx-auto mt-4 max-w-xl text-paper-100/90">
         Подари си или на някой друг момент на спокойствие, цвят и творчество.
       </p>
-      <LinkButton href="/checkout" variant="secondary" className="mt-8">
+      <LinkButton href="/checkout" variant="primary" className="mt-8">
         Поръчай сега
       </LinkButton>
     </Section>

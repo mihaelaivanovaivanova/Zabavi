@@ -2,7 +2,17 @@ import { Badge } from "@/components/ui/Badge";
 import { formatBgn } from "@/lib/format";
 import { product } from "@/config/site";
 
-export function OrderSummary({ quantity }: { quantity: number }) {
+export function OrderSummary({
+  quantity,
+  variantLabel,
+  priceBgn,
+}: {
+  quantity: number;
+  variantLabel?: string;
+  priceBgn: number | null;
+}) {
+  const totalBgn = priceBgn !== null ? priceBgn * quantity : null;
+
   return (
     <div className="rounded-2xl border border-lavender-200 bg-lavender-50 p-6">
       <div className="flex items-center justify-between gap-2">
@@ -11,16 +21,19 @@ export function OrderSummary({ quantity }: { quantity: number }) {
       </div>
       <dl className="mt-4 space-y-2 text-sm text-ink-800">
         <div className="flex justify-between">
-          <dt>{product.name}</dt>
+          <dt>
+            {product.name}
+            {variantLabel ? <span className="block text-xs text-ink-700">{variantLabel}</span> : null}
+          </dt>
           <dd>× {quantity}</dd>
         </div>
         <div className="flex justify-between border-t border-lavender-200 pt-2 font-semibold">
           <dt>Крайна сума</dt>
-          <dd>{formatBgn(product.priceBgn)}</dd>
+          <dd>{formatBgn(totalBgn)}</dd>
         </div>
       </dl>
       <p className="mt-4 text-xs text-ink-700">
-        Това е демонстрационен изглед. Цената е все още TBD и не се подава реална поръчка.
+        Това е демонстрационен изглед. Крайната сума е ориентировъчна и не се подава реална поръчка.
       </p>
     </div>
   );
