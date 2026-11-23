@@ -19,13 +19,14 @@ export function WhatsInTheBox() {
             src={videoUrl}
             controls
             playsInline
-            className="aspect-[16/10] w-full rounded-2xl bg-ink-900/5 object-cover"
+            className="aspect-[9/16] w-full max-w-sm mx-auto rounded-2xl bg-ink-900/5 object-cover"
           />
         ) : (
           <PlaceholderImage
             label="Съдържание на кутията"
             alt="Разложено съдържание на акварелния creative kit"
-            aspect="wide"
+            aspect="reel"
+            className="w-full max-w-sm mx-auto"
           />
         )}
         <div>

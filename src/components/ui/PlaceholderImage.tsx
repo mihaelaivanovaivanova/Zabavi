@@ -1,7 +1,7 @@
 interface PlaceholderImageProps {
   label: string;
   alt: string;
-  aspect?: "square" | "portrait" | "wide";
+  aspect?: "square" | "portrait" | "wide" | "reel";
   className?: string;
 }
 
@@ -9,6 +9,7 @@ const aspectClasses: Record<Required<PlaceholderImageProps>["aspect"], string> =
   square: "aspect-square",
   portrait: "aspect-[3/4]",
   wide: "aspect-[16/10]",
+  reel: "aspect-[9/16]",
 };
 
 /**
