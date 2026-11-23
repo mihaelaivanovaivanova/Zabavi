@@ -1,17 +1,17 @@
 import { Badge } from "@/components/ui/Badge";
-import { formatBgn } from "@/lib/format";
+import { formatEur } from "@/lib/format";
 import { product } from "@/config/site";
 
 export function OrderSummary({
   quantity,
   variantLabel,
-  priceBgn,
+  priceEur,
 }: {
   quantity: number;
   variantLabel?: string;
-  priceBgn: number | null;
+  priceEur: number | null;
 }) {
-  const totalBgn = priceBgn !== null ? priceBgn * quantity : null;
+  const totalEur = priceEur !== null ? priceEur * quantity : null;
 
   return (
     <div className="rounded-2xl border border-lavender-200 bg-lavender-50 p-6">
@@ -29,7 +29,7 @@ export function OrderSummary({
         </div>
         <div className="flex justify-between border-t border-lavender-200 pt-2 font-semibold">
           <dt>Крайна сума</dt>
-          <dd>{formatBgn(totalBgn)}</dd>
+          <dd>{formatEur(totalEur)}</dd>
         </div>
       </dl>
       <p className="mt-4 text-xs text-ink-700">

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { inputClasses } from "@/components/ui/Field";
 import { StatTile } from "@/components/admin/StatTile";
 import { computeOrderStats, isDueForReminder, latestShipmentEvent } from "@/lib/orderStats";
-import { formatBgn } from "@/lib/format";
+import { formatEur } from "@/lib/format";
 
 type StatusFilter = "all" | OrderStatus;
 type DeliveryFilter = "all" | DeliveryMethodId;
@@ -93,7 +93,7 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
         <StatTile label="Потвърдени" value={String(stats.confirmed)} />
         <StatTile label="Отказани" value={String(stats.cancelled)} />
         <StatTile label="Уникални клиенти" value={String(stats.uniqueCustomers)} />
-        <StatTile label="Обща сума" value={formatBgn(null)} hint="Цената предстои да се зададе" />
+        <StatTile label="Обща сума" value={formatEur(null)} hint="Цената предстои да се зададе" />
       </div>
 
       <div className="mt-10 flex items-center justify-between gap-4">
@@ -211,7 +211,7 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
                     {order.shippingDetails.method}
                     {latestShipmentEvent(order) ? ` — ${latestShipmentEvent(order)?.event}` : ""}
                   </td>
-                  <td className="px-4 py-3 text-ink-700">{formatBgn(null)}</td>
+                  <td className="px-4 py-3 text-ink-700">{formatEur(null)}</td>
                 </tr>
               ))}
             </tbody>

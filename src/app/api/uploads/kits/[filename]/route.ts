@@ -10,6 +10,9 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   webp: "image/webp",
   avif: "image/avif",
   gif: "image/gif",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
 };
 
 /**

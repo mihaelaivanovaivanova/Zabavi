@@ -41,13 +41,13 @@ afterEach(() => {
 describe("isICardApiConfigured", () => {
   it("returns false when no credentials are set", async () => {
     const { isICardApiConfigured } = await import("@/infrastructure/payments/icard/icardApiClient");
-    expect(isICardApiConfigured()).toBe(false);
+    expect(await isICardApiConfigured()).toBe(false);
   });
 
   it("returns true once every required env var is set", async () => {
     stubRequiredEnv();
     const { isICardApiConfigured } = await import("@/infrastructure/payments/icard/icardApiClient");
-    expect(isICardApiConfigured()).toBe(true);
+    expect(await isICardApiConfigured()).toBe(true);
   });
 });
 
@@ -62,7 +62,7 @@ describe("requestPaymentWidgetToken", () => {
     const { requestPaymentWidgetToken } = await import("@/infrastructure/payments/icard/icardApiClient");
     const result = await requestPaymentWidgetToken({
       orderId: "order-1",
-      amountBgn: 23.45,
+      amountEur: 23.45,
       customerIp: "82.119.81.30",
       customerName: "Иван Иванов",
       customerEmail: "ivan@example.bg",
@@ -99,7 +99,7 @@ describe("requestPaymentWidgetToken", () => {
     await expect(
       requestPaymentWidgetToken({
         orderId: "order-1",
-        amountBgn: 23.45,
+        amountEur: 23.45,
         customerIp: "82.119.81.30",
         customerName: "Иван Иванов",
         customerEmail: "ivan@example.bg",
@@ -122,7 +122,7 @@ describe("requestPaymentWidgetToken", () => {
     await expect(
       requestPaymentWidgetToken({
         orderId: "order-1",
-        amountBgn: 23.45,
+        amountEur: 23.45,
         customerIp: "82.119.81.30",
         customerName: "Иван Иванов",
         customerEmail: "ivan@example.bg",
@@ -139,7 +139,7 @@ describe("requestPaymentWidgetToken", () => {
     await expect(
       requestPaymentWidgetToken({
         orderId: "order-1",
-        amountBgn: 23.45,
+        amountEur: 23.45,
         customerIp: "82.119.81.30",
         customerName: "Иван Иванов",
         customerEmail: "ivan@example.bg",

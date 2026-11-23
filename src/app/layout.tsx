@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
+import { CartProvider } from "@/lib/CartContext";
+import { CookieConsentProvider } from "@/lib/CookieConsentContext";
+import { CookieConsent } from "@/components/legal/CookieConsent";
+import { MetaPixelLoader } from "@/components/legal/MetaPixelLoader";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -26,7 +30,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="bg" className={`${montserrat.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <CartProvider>
+          <CookieConsentProvider>
+            {children}
+            <CookieConsent />
+            <MetaPixelLoader />
+          </CookieConsentProvider>
+        </CartProvider>
+      </body>
     </html>
   );
 }

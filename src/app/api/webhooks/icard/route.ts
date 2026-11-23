@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return new Response("Missing signature", { status: 400 });
   }
 
-  const publicKey = getICardPublicKey();
+  const publicKey = await getICardPublicKey();
   if (!publicKey) {
     return new Response("Not configured", { status: 503 });
   }

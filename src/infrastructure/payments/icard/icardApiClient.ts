@@ -1,11 +1,14 @@
 import { PaymentProviderError } from "@/domain/payment/types";
 import { phpUrlEncode, signIcardFields, verifyIcardFields } from "@/infrastructure/payments/icard/icardSignature";
+import { getICardSettings, isICardConfigured } from "@/infrastructure/settings/icardSettingsService";
 
 /**
  * Low-level client for iCard's IPG API, per the official "IPG API v3.4"
  * manual (RSA-signed POST requests, XML responses). All values below are
  * account-specific and issued/exchanged by iCard only after integration —
- * never hardcoded, always read from env.
+ * never hardcoded. Read from the admin-editable settings (see
+ * `icardSettingsService.ts`), which itself falls back to env vars for local
+ * use without a database.
  */
 
 interface ICardApiConfig {
@@ -20,47 +23,28 @@ interface ICardApiConfig {
   icardPublicKey: string;
 }
 
-function readConfig(): ICardApiConfig | null {
-  const apiUrl = process.env.ICARD_API_URL || "https://ipay.bg/paymentpage";
-  const originator = process.env.ICARD_ORIGINATOR;
-  const mid = process.env.ICARD_MID;
-  const midName = process.env.ICARD_MID_NAME;
-  const privateKey = process.env.ICARD_PRIVATE_KEY;
-  const icardPublicKey = process.env.ICARD_IPG_PUBLIC_KEY;
-
-  if (!originator || !mid || !midName || !privateKey || !icardPublicKey) {
-    return null;
-  }
-
-  return {
-    apiUrl,
-    originator,
-    mid,
-    midName,
-    privateKey,
-    icardPublicKey,
-    keyIndex: process.env.ICARD_KEY_INDEX || "1",
-    ipgVersion: process.env.ICARD_IPG_VERSION || "3.3",
-    language: process.env.ICARD_LANGUAGE || "BG",
-  };
+async function readConfig(): Promise<ICardApiConfig | null> {
+  if (!(await isICardConfigured())) return null;
+  return getICardSettings();
 }
 
-export function isICardApiConfigured(): boolean {
-  return readConfig() !== null;
+export async function isICardApiConfigured(): Promise<boolean> {
+  return isICardConfigured();
 }
 
-export function getICardPublicKey(): string | null {
-  return readConfig()?.icardPublicKey ?? null;
+export async function getICardPublicKey(): Promise<string | null> {
+  const config = await readConfig();
+  return config?.icardPublicKey ?? null;
 }
 
-/** ISO 4217 numeric currency code for BGN. */
-const BGN_NUMERIC_CURRENCY_CODE = "975";
+/** ISO 4217 numeric currency code for EUR. */
+const EUR_NUMERIC_CURRENCY_CODE = "978";
 /** ISO 3166-1 numeric country code for Bulgaria — the site is BG-only. */
 const BULGARIA_NUMERIC_COUNTRY_CODE = "100";
 
 export interface PaymentWidgetTokenInput {
   orderId: string;
-  amountBgn: number;
+  amountEur: number;
   customerIp: string;
   customerName: string;
   customerEmail: string;
@@ -89,12 +73,12 @@ function extractXmlTag(xml: string, tag: string): string | undefined {
 export async function requestPaymentWidgetToken(
   input: PaymentWidgetTokenInput,
 ): Promise<PaymentWidgetTokenResult> {
-  const config = readConfig();
+  const config = await readConfig();
   if (!config) {
     throw new PaymentProviderError("iCard IPG API credentials are not configured.");
   }
 
-  const amount = input.amountBgn.toFixed(2);
+  const amount = input.amountEur.toFixed(2);
 
   // Field order matters: it's exactly what gets concatenated for the
   // request signature, and must match the order values are sent in.
@@ -108,7 +92,7 @@ export async function requestPaymentWidgetToken(
     ["MID", config.mid],
     ["MIDName", config.midName],
     ["Amount", amount],
-    ["Currency", BGN_NUMERIC_CURRENCY_CODE],
+    ["Currency", EUR_NUMERIC_CURRENCY_CODE],
     ["CustomerIP", input.customerIp],
     ["OrderID", input.orderId],
     ["BannerIndex", "1"],
@@ -125,7 +109,7 @@ export async function requestPaymentWidgetToken(
     ["Quantity_1", "1"],
     ["Price_1", amount],
     ["Amount_1", amount],
-    ["Currency_1", BGN_NUMERIC_CURRENCY_CODE],
+    ["Currency_1", EUR_NUMERIC_CURRENCY_CODE],
   ];
 
   const signature = signIcardFields(fields, config.privateKey);

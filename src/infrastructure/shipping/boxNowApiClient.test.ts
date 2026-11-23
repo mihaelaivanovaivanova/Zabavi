@@ -25,13 +25,13 @@ afterEach(() => {
 describe("isBoxNowApiConfigured", () => {
   it("returns false when no credentials are set", async () => {
     const { isBoxNowApiConfigured } = await import("@/infrastructure/shipping/boxNowApiClient");
-    expect(isBoxNowApiConfigured()).toBe(false);
+    expect(await isBoxNowApiConfigured()).toBe(false);
   });
 
   it("returns true once every required env var is set", async () => {
     stubRequiredEnv();
     const { isBoxNowApiConfigured } = await import("@/infrastructure/shipping/boxNowApiClient");
-    expect(isBoxNowApiConfigured()).toBe(true);
+    expect(await isBoxNowApiConfigured()).toBe(true);
   });
 });
 
@@ -53,9 +53,9 @@ describe("createBoxNowDeliveryRequest", () => {
     const { createBoxNowDeliveryRequest } = await import("@/infrastructure/shipping/boxNowApiClient");
     const result = await createBoxNowDeliveryRequest({
       orderNumber: "order-1",
-      invoiceValueBgn: 25.5,
+      invoiceValueEur: 25.5,
       paymentMode: "cod",
-      amountToBeCollectedBgn: 25.5,
+      amountToBeCollectedEur: 25.5,
       destinationLockerId: "LOCKER-42",
       customerName: "Иван Иванов",
       customerPhone: "0888123456",
@@ -92,9 +92,9 @@ describe("createBoxNowDeliveryRequest", () => {
     await expect(
       createBoxNowDeliveryRequest({
         orderNumber: "order-1",
-        invoiceValueBgn: 25.5,
+        invoiceValueEur: 25.5,
         paymentMode: "prepaid",
-        amountToBeCollectedBgn: 0,
+        amountToBeCollectedEur: 0,
         destinationLockerId: "LOCKER-42",
         customerName: "Иван Иванов",
         customerPhone: "0888123456",
@@ -107,9 +107,9 @@ describe("createBoxNowDeliveryRequest", () => {
     await expect(
       createBoxNowDeliveryRequest({
         orderNumber: "order-1",
-        invoiceValueBgn: 25.5,
+        invoiceValueEur: 25.5,
         paymentMode: "prepaid",
-        amountToBeCollectedBgn: 0,
+        amountToBeCollectedEur: 0,
         destinationLockerId: "LOCKER-42",
         customerName: "Иван Иванов",
         customerPhone: "0888123456",

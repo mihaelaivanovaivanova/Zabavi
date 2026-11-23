@@ -3,7 +3,7 @@ import { siteConfig } from "@/config/site";
 
 export function WhySpecial() {
   return (
-    <Section tone="paper">
+    <Section tone="lavender">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-semibold text-ink-900">Какво прави подаръка специален</h2>
         <p className="mt-5 text-lg text-ink-800">{siteConfig.brand.description}</p>

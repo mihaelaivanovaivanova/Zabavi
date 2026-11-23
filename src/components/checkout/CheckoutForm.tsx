@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,8 @@ import { VariantSelector } from "@/components/checkout/VariantSelector";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/validation";
 import { product } from "@/config/site";
+import { resolveVariant } from "@/domain/kit/types";
+import { useCart } from "@/lib/CartContext";
 import { useKits } from "@/lib/useKits";
 
 type SubmitState =
@@ -34,11 +36,12 @@ type SubmitState =
 
 export function CheckoutForm() {
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
+  const { item: cartItem, clearCart } = useCart();
   const searchParams = useSearchParams();
-  const requestedVariant = searchParams.get("variant");
+  const requestedVariant = cartItem?.variantId ?? searchParams.get("variant");
   const defaultVariantId =
     product.variants.find((variant) => variant.id === requestedVariant)?.id ?? product.variants[0].id;
-  const requestedQuantity = Number(searchParams.get("quantity"));
+  const requestedQuantity = cartItem?.quantity ?? Number(searchParams.get("quantity"));
   const defaultQuantity =
     Number.isInteger(requestedQuantity) && requestedQuantity >= 1 && requestedQuantity <= 10 ? requestedQuantity : 1;
 
@@ -76,7 +79,23 @@ export function CheckoutForm() {
   const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
   const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
   const { kits } = useKits();
-  const activeKitPriceBgn = kits.find((kit) => kit.variantId === variantId)?.priceBgn ?? null;
+  const activeKitPriceEur = kits.find((kit) => kit.variantId === variantId)?.priceEur ?? null;
+  const resolvedVariants = product.variants.map((variant) =>
+    resolveVariant(
+      variant,
+      kits.find((kit) => kit.variantId === variant.id),
+    ),
+  );
+
+  // The cart hydrates from localStorage a tick after first render, so apply
+  // its values once available in case they arrived too late for the form's
+  // initial defaultValues above.
+  useEffect(() => {
+    if (!cartItem) return;
+    const variant = product.variants.find((v) => v.id === cartItem.variantId)?.id ?? product.variants[0].id;
+    setValue("variantId", variant);
+    setValue("quantity", cartItem.quantity);
+  }, [cartItem, setValue]);
 
   const handleLockerSelect = useCallback(
     (selection: BoxNowSelection) => {
@@ -106,6 +125,7 @@ export function CheckoutForm() {
       }
 
       if (data.paymentWidgetToken) {
+        clearCart();
         setSubmitState({
           status: "awaiting_card_payment",
           orderId: data.orderId,
@@ -115,6 +135,7 @@ export function CheckoutForm() {
         return;
       }
 
+      clearCart();
       setSubmitState({
         status: "success",
         orderId: data.orderId,
@@ -169,7 +190,7 @@ export function CheckoutForm() {
           Това е демонстрационен checkout. Не се подава реална поръчка и не се обработва реално плащане.
         </div>
 
-        <VariantSelector register={() => register("variantId")} />
+        <VariantSelector variants={resolvedVariants} register={() => register("variantId")} />
 
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-ink-900">Данни за контакт</h2>
@@ -239,8 +260,8 @@ export function CheckoutForm() {
       <div>
         <OrderSummary
           quantity={Number(quantity) || 1}
-          variantLabel={product.variants.find((variant) => variant.id === variantId)?.label}
-          priceBgn={activeKitPriceBgn}
+          variantLabel={resolvedVariants.find((variant) => variant.id === variantId)?.label}
+          priceEur={activeKitPriceEur}
         />
       </div>
     </form>

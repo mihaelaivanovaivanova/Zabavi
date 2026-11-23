@@ -4,11 +4,22 @@ export interface PlaceholderImage {
   alt: string;
   /** Real image URL, e.g. uploaded through /admin/kits. Renders instead of the placeholder box when set. */
   url?: string;
+  /** Crop focal point as a percentage (0-100), for `object-position` when shown cropped to a square. Defaults to center. */
+  focalX?: number;
+  focalY?: number;
 }
 
 export interface ProductVariant {
   id: string;
   label: string;
+  /** Short mood-setting line shown above the "Получаваш:" list on this variant's price card. */
+  intro?: string;
+  /** What's inside this specific variant's kit, shown as a "Получаваш:" list on its price card. */
+  contents?: string[];
+  /** Extra bonus items for this variant, shown as a "Бонус:" list on its price card. */
+  bonus?: string[];
+  /** Short label shown as a corner tag on this variant's tab, e.g. "Лимитирано". */
+  badge?: string;
 }
 
 export interface Illustration {
@@ -30,7 +41,7 @@ export interface Product {
   illustrations: Illustration[];
   variants: ProductVariant[];
   /** Price/photos are per-kit now — see `src/domain/kit/types.ts` and /admin/kits, not a single product-wide value. */
-  currency: "BGN";
+  currency: "EUR";
   /** Rating out of 5 shown under the product name. */
   rating: number;
 }

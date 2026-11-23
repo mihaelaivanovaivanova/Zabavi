@@ -12,11 +12,11 @@ interface LogoProps {
 }
 
 const sources: Record<Required<LogoProps>["variant"], { src: string; width: number; height: number }> = {
-  wordmark: { src: "/brand/zabavi-wordmark.svg", width: 1983, height: 793 },
+  wordmark: { src: "/brand/zabavi-wordmark.svg", width: 1251, height: 494 },
   stacked: { src: "/brand/zabavi-wordmark-stacked.svg", width: 1254, height: 1254 },
   "stacked-light": { src: "/brand/zabavi-wordmark-stacked-light.svg", width: 1254, height: 1254 },
   lockup: { src: "/brand/zabavi-lockup.svg", width: 2048, height: 682 },
-  mark: { src: "/brand/zabavi-mark.svg", width: 1254, height: 1254 },
+  mark: { src: "/brand/zabavi-mark.svg", width: 550, height: 474 },
   badge: { src: "/brand/zabavi-badge.svg", width: 1254, height: 1254 },
 };
 

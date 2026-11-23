@@ -18,7 +18,7 @@ function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
 
 describe("getShippingProvider", () => {
   it("resolves the courier stub provider", async () => {
-    const provider = getShippingProvider("courier");
+    const provider = await getShippingProvider("courier");
     expect(provider.method).toBe("courier");
     const result = await provider.createShipment(makeOrder());
     expect(result.isLive).toBe(false);
@@ -26,7 +26,7 @@ describe("getShippingProvider", () => {
   });
 
   it("resolves the BOX NOW stub provider and references the real selected locker ID when the API is not configured", async () => {
-    const provider = getShippingProvider("box_now");
+    const provider = await getShippingProvider("box_now");
     expect(provider.method).toBe("box_now");
     const order = makeOrder({
       shippingDetails: { method: "box_now", lockerId: "LOCKER-42", addressLine1: "ул. Тест 5", postalCode: "1000" },
@@ -37,7 +37,7 @@ describe("getShippingProvider", () => {
     expect(result.notice).toContain("LOCKER-42");
   });
 
-  it("switches to the real BOX NOW API provider once credentials are configured", () => {
+  it("switches to the real BOX NOW API provider once credentials are configured", async () => {
     vi.stubEnv("BOXNOW_API_URL", "https://partner-api.boxnow.bg");
     vi.stubEnv("BOXNOW_OAUTH_CLIENT_ID", "test-client-id");
     vi.stubEnv("BOXNOW_OAUTH_CLIENT_SECRET", "test-client-secret");
@@ -46,7 +46,7 @@ describe("getShippingProvider", () => {
     vi.stubEnv("BOXNOW_ORIGIN_CONTACT_EMAIL", "warehouse@zabavi.example");
     vi.stubEnv("BOXNOW_ORIGIN_CONTACT_NUMBER", "+359888000000");
 
-    expect(getShippingProvider("box_now")).toBeInstanceOf(BoxNowApiProvider);
+    expect(await getShippingProvider("box_now")).toBeInstanceOf(BoxNowApiProvider);
   });
 });
 

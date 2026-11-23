@@ -6,9 +6,9 @@ export interface CartLineItem {
 }
 
 export interface OrderTotals {
-  subtotalBgn: number | null;
-  shippingBgn: number | null;
-  totalBgn: number | null;
-  /** false whenever any line item has no finalized price (e.g. priceBgn is still TBD). */
+  subtotalEur: number | null;
+  shippingEur: number | null;
+  totalEur: number | null;
+  /** false whenever any line item has no finalized price (e.g. priceEur is still TBD). */
   isPriceConfirmed: boolean;
 }

@@ -7,7 +7,7 @@ export type VariantPriceLookup = (productSlug: string, variantId: string) => Pro
 async function defaultPriceLookup(productSlug: string, variantId: string): Promise<number | null> {
   if (!getProductBySlug(productSlug)) return null;
   const kit = await kitRepository.get(variantId);
-  return kit.priceBgn;
+  return kit.priceEur;
 }
 
 /**
@@ -20,25 +20,25 @@ export async function calculateTotals(
   priceLookup: VariantPriceLookup = defaultPriceLookup,
 ): Promise<OrderTotals> {
   if (items.length === 0) {
-    return { subtotalBgn: null, shippingBgn: null, totalBgn: null, isPriceConfirmed: false };
+    return { subtotalEur: null, shippingEur: null, totalEur: null, isPriceConfirmed: false };
   }
 
-  let subtotalBgn = 0;
+  let subtotalEur = 0;
 
   for (const item of items) {
     const price = await priceLookup(item.productSlug, item.variantId);
     if (price === null) {
-      return { subtotalBgn: null, shippingBgn: null, totalBgn: null, isPriceConfirmed: false };
+      return { subtotalEur: null, shippingEur: null, totalEur: null, isPriceConfirmed: false };
     }
-    subtotalBgn += price * item.quantity;
+    subtotalEur += price * item.quantity;
   }
 
-  const shippingBgn = 0;
+  const shippingEur = 0;
 
   return {
-    subtotalBgn,
-    shippingBgn,
-    totalBgn: subtotalBgn + shippingBgn,
+    subtotalEur,
+    shippingEur,
+    totalEur: subtotalEur + shippingEur,
     isPriceConfirmed: true,
   };
 }

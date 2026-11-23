@@ -14,8 +14,8 @@ const stubProviders: Record<DeliveryMethodId, ShippingProvider> = {
  * configured (see `boxNowApiClient.ts`); otherwise the demo stub, so the
  * checkout flow stays honest about what it can actually submit.
  */
-export function getShippingProvider(method: DeliveryMethodId): ShippingProvider {
-  if (method === "box_now" && isBoxNowApiConfigured()) {
+export async function getShippingProvider(method: DeliveryMethodId): Promise<ShippingProvider> {
+  if (method === "box_now" && (await isBoxNowApiConfigured())) {
     return new BoxNowApiProvider();
   }
   return stubProviders[method];

@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     createdAt: createdAt.toISOString(),
   };
 
-  const paymentProvider = getPaymentProvider(values.paymentMethod);
+  const paymentProvider = await getPaymentProvider(values.paymentMethod);
   let paymentResult;
   try {
     paymentResult = await paymentProvider.createPayment(order);
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   }
   order.paymentStatus = paymentResult.status;
 
-  const shippingProvider = getShippingProvider(values.deliveryMethod);
+  const shippingProvider = await getShippingProvider(values.deliveryMethod);
   let shippingResult;
   try {
     shippingResult = await shippingProvider.createShipment(order);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { product } from "@/config/site";
 import { kitRepository } from "@/infrastructure/repositories/kitRepository";
-import { formatBgn } from "@/lib/format";
+import { formatEur } from "@/lib/format";
 
 export default function AdminKitsPage() {
   return (
@@ -38,18 +38,23 @@ async function KitsGrid() {
             <div className="flex aspect-square items-center justify-center border-b border-lavender-200 bg-lavender-50">
               {kit?.coverImage ? (
                 // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded asset, not an optimized remote image
-                <img src={kit.coverImage.url} alt={kit.coverImage.alt} className="h-full w-full object-cover" />
+                <img
+                  src={kit.coverImage.url}
+                  alt={kit.coverImage.alt}
+                  className="h-full w-full object-cover"
+                  style={{ objectPosition: `${kit.coverImage.focalX ?? 50}% ${kit.coverImage.focalY ?? 50}%` }}
+                />
               ) : (
                 <span className="px-4 text-center text-sm font-medium text-lavender-600">Няма заглавна снимка</span>
               )}
             </div>
             <div className="p-4">
-              <h2 className="font-semibold text-ink-900">{variant.label}</h2>
+              <h2 className="font-semibold text-ink-900">{kit?.label ?? variant.label}</h2>
               <p className="mt-1 text-sm text-ink-700">
-                {kit?.compareAtPriceBgn ? (
-                  <span className="mr-2 line-through">{formatBgn(kit.compareAtPriceBgn)}</span>
+                {kit?.compareAtPriceEur ? (
+                  <span className="mr-2 line-through">{formatEur(kit.compareAtPriceEur)}</span>
                 ) : null}
-                {formatBgn(kit?.priceBgn ?? null)}
+                {formatEur(kit?.priceEur ?? null)}
               </p>
               <p className="mt-1 text-xs text-ink-700">{kit?.gallery.length ?? 0} снимки в галерията</p>
             </div>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <title>ЗАБАВИ — плащане в брой</title>
+  <g stroke="#713448" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7.1 13.7C16.1 13.2 30.3 14.1 40.1 13.6C42.6 13.5 43.9 14.7 43.8 17.1L43.6 31.2C43.6 33.5 42.3 34.5 39.8 34.4C29.9 34 17.2 34.9 7.5 34.4C5.1 34.3 4 33.1 4.1 30.8L4.3 17.3C4.3 15 5.2 13.8 7.1 13.7Z"/>
+    <path d="M10.2 24L14 24.1M34 24.1L37.7 24"/>
+  </g>
+  <path d="M29 24.1C29.1 27 27 29.2 24.1 29.2C21.3 29.3 19 27.2 19 24.3C18.9 21.4 21 19.2 23.8 19.1C26.7 19 28.9 21.2 29 24.1Z" stroke="#F3A044" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

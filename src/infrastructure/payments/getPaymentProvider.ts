@@ -14,8 +14,8 @@ const stubProviders: Record<PaymentMethodId, PaymentProvider> = {
  * configured (see `icard/icardApiClient.ts`); otherwise the demo stub, so
  * checkout stays honest about what it can actually charge.
  */
-export function getPaymentProvider(method: PaymentMethodId): PaymentProvider {
-  if (method === "card_icard" && isICardApiConfigured()) {
+export async function getPaymentProvider(method: PaymentMethodId): Promise<PaymentProvider> {
+  if (method === "card_icard" && (await isICardApiConfigured())) {
     return new ICardApiProvider();
   }
   return stubProviders[method];

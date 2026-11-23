@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ArrowIcon } from "@/components/ui/ArrowIcon";
 import { PlaceholderImage } from "@/components/ui/PlaceholderImage";
 import type { PlaceholderImage as PlaceholderImageData } from "@/domain/product/types";
 
@@ -12,27 +13,15 @@ function GalleryImage({ image, aspect }: { image: PlaceholderImageData; aspect: 
   if (image.url) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded asset, not an optimized remote image
-      <img src={image.url} alt={image.alt} className="aspect-square w-full rounded-2xl object-cover" />
+      <img
+        src={image.url}
+        alt={image.alt}
+        className="aspect-square w-full rounded-2xl object-cover"
+        style={{ objectPosition: `${image.focalX ?? 50}% ${image.focalY ?? 50}%` }}
+      />
     );
   }
   return <PlaceholderImage label={image.label} alt={image.alt} aspect={aspect} />;
-}
-
-function ArrowIcon({ direction }: { direction: "left" | "right" }) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="h-5 w-5"
-    >
-      <path d={direction === "left" ? "M12.5 4.5 7 10l5.5 5.5" : "M7.5 4.5 13 10l-5.5 5.5"} />
-    </svg>
-  );
 }
 
 export function ProductGallery({ images }: ProductGalleryProps) {
@@ -77,7 +66,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
         aria-label="Предишна снимка"
         onClick={() => scrollToIndex(index - 1)}
         disabled={index === 0}
-        className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-paper-50/90 p-2 text-ink-900 shadow transition-opacity disabled:pointer-events-none disabled:opacity-0 sm:flex"
+        className="absolute left-2 top-1/2 hidden -translate-y-1/2 transition-opacity disabled:pointer-events-none disabled:opacity-0 sm:flex"
       >
         <ArrowIcon direction="left" />
       </button>
@@ -86,7 +75,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
         aria-label="Следваща снимка"
         onClick={() => scrollToIndex(index + 1)}
         disabled={index === images.length - 1}
-        className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-paper-50/90 p-2 text-ink-900 shadow transition-opacity disabled:pointer-events-none disabled:opacity-0 sm:flex"
+        className="absolute right-2 top-1/2 hidden -translate-y-1/2 transition-opacity disabled:pointer-events-none disabled:opacity-0 sm:flex"
       >
         <ArrowIcon direction="right" />
       </button>
@@ -103,7 +92,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
         ))}
       </div>
 
-      <div className="mt-3 hidden gap-2 sm:flex">
+      <div className="mt-3 hidden flex-wrap gap-2 sm:flex">
         {images.map((image, i) => (
           <button
             key={i}
@@ -117,7 +106,12 @@ export function ProductGallery({ images }: ProductGalleryProps) {
           >
             {image.url ? (
               // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded asset, not an optimized remote image
-              <img src={image.url} alt={image.alt} className="h-full w-full object-cover" />
+              <img
+                src={image.url}
+                alt={image.alt}
+                className="h-full w-full object-cover"
+                style={{ objectPosition: `${image.focalX ?? 50}% ${image.focalY ?? 50}%` }}
+              />
             ) : (
               <div className="h-full w-full border border-dashed border-lavender-300 bg-lavender-50" aria-hidden="true" />
             )}

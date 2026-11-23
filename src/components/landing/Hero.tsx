@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { LinkButton } from "@/components/ui/Button";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { CheckBadgeList } from "@/components/ui/CheckBadgeList";
 import { Container } from "@/components/ui/Container";
 import { ProductGallery } from "@/components/ui/ProductGallery";
 import { StarRating } from "@/components/ui/StarRating";
+import { PaymentBadges } from "@/components/landing/PaymentBadges";
+import { StickyBuyBar } from "@/components/landing/StickyBuyBar";
+import { TrustBadges } from "@/components/landing/TrustBadges";
 import { VariantPriceCard } from "@/components/landing/VariantPriceCard";
 import { product, testimonials } from "@/config/site";
+import { resolveVariant } from "@/domain/kit/types";
+import { useCart } from "@/lib/CartContext";
 import { useKits } from "@/lib/useKits";
+import { useSelectedVariant } from "@/lib/SelectedVariantContext";
 
 export function Hero() {
-  const [activeVariantId, setActiveVariantId] = useState(product.variants[0].id);
+  const { selectedVariantId: activeVariantId, setSelectedVariantId: setActiveVariantId } = useSelectedVariant();
   const [quantity, setQuantity] = useState(1);
   const activeIndex = Math.max(
     0,
@@ -19,12 +25,20 @@ export function Hero() {
   );
   const { kits } = useKits();
   const activeKit = kits.find((kit) => kit.variantId === activeVariantId);
+  const resolvedVariants = product.variants.map((variant) =>
+    resolveVariant(
+      variant,
+      kits.find((kit) => kit.variantId === variant.id),
+    ),
+  );
 
   const galleryImages = activeKit
     ? [...(activeKit.coverImage ? [activeKit.coverImage] : []), ...activeKit.gallery].map((image) => ({
         label: image.alt,
         alt: image.alt,
         url: image.url,
+        focalX: image.focalX,
+        focalY: image.focalY,
       }))
     : [];
   const shownGalleryImages = galleryImages.length > 0 ? galleryImages : product.gallery;
@@ -49,18 +63,43 @@ export function Hero() {
     return () => window.removeEventListener("resize", syncStickyTop);
   }, []);
 
+  // The sticky buy bar mirrors this CTA everywhere else on the page: shown
+  // once this one scrolls out of view, hidden again once it's back in view.
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const target = ctaRef.current;
+    if (!target) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  const { addToCart } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+
+  function handleAddToCart() {
+    addToCart(activeVariantId, quantity);
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 2000);
+  }
+
   return (
     <section className="bg-lavender-50 pb-16 pt-12 sm:pb-24 sm:pt-20">
-      <Container className="grid items-start gap-10 sm:grid-cols-2">
-        <div className="sm:sticky" style={{ top: stickyTop }}>
+      <Container className="grid grid-cols-1 items-start gap-10 sm:grid-cols-2">
+        <div className="min-w-0 sm:sticky" style={{ top: stickyTop }}>
           <ProductGallery images={shownGalleryImages} />
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-3xl font-semibold text-ink-900 sm:text-4xl">{product.name}</h1>
           <div className="mt-3">
             <StarRating value={product.rating} count={testimonials.length} starClassName="h-7 w-7" />
           </div>
-          <p className="mt-6 max-w-md text-lg text-ink-800">{product.tagline}</p>
+          <p className="mt-6 text-lg text-ink-800">{product.tagline}</p>
           <div className="mt-6">
             <CheckBadgeList items={product.highlights} />
           </div>
@@ -68,7 +107,7 @@ export function Hero() {
           <div
             role="tablist"
             aria-label="Теми на комплекта"
-            className="relative mt-6 flex max-w-md rounded-full border border-lavender-200 bg-paper-50 p-1"
+            className="relative mt-6 flex rounded-full border border-lavender-200 bg-paper-50 p-1"
           >
             <div
               aria-hidden="true"
@@ -78,7 +117,7 @@ export function Hero() {
                 transform: `translateX(${activeIndex * 100}%)`,
               }}
             />
-            {product.variants.map((variant) => (
+            {resolvedVariants.map((variant) => (
               <button
                 key={variant.id}
                 type="button"
@@ -90,18 +129,23 @@ export function Hero() {
                 }`}
               >
                 {variant.label}
+                {variant.badge ? (
+                  <span className="absolute -top-3 right-1 rounded-full bg-accent-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-paper-50 shadow">
+                    {variant.badge}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>
 
-          <div className="mt-4 max-w-md">
+          <div className="mt-4">
             {(() => {
-              const activeVariant = product.variants.find((variant) => variant.id === activeVariantId);
+              const activeVariant = resolvedVariants.find((variant) => variant.id === activeVariantId);
               return activeVariant ? (
                 <VariantPriceCard
                   variant={activeVariant}
-                  priceBgn={activeKit?.priceBgn ?? null}
-                  compareAtPriceBgn={activeKit?.compareAtPriceBgn ?? null}
+                  priceEur={activeKit?.priceEur ?? null}
+                  compareAtPriceEur={activeKit?.compareAtPriceEur ?? null}
                   active
                   onSelect={() => setActiveVariantId(activeVariant.id)}
                   quantity={quantity}
@@ -111,16 +155,35 @@ export function Hero() {
             })()}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-4">
-            <LinkButton href={`/checkout?variant=${activeVariantId}&quantity=${quantity}`} variant="primary">
-              Подари си момент
-            </LinkButton>
-            <LinkButton href="#whats-inside" variant="ghost">
-              Виж какво има в кутията
-            </LinkButton>
+          <div ref={ctaRef} className="mt-6">
+            <Button type="button" variant="primary" className="w-full" onClick={handleAddToCart}>
+              {justAdded ? "Добавено ✓" : "Добави в количката"}
+            </Button>
+          </div>
+
+          <div className="mt-6">
+            <TrustBadges />
+          </div>
+
+          <div className="mt-5">
+            <PaymentBadges />
           </div>
         </div>
       </Container>
+
+      <StickyBuyBar
+        visible={showStickyBar}
+        imageUrl={shownGalleryImages[0]?.url}
+        imageAlt={shownGalleryImages[0]?.alt ?? product.name}
+        imageFocalX={shownGalleryImages[0]?.focalX}
+        imageFocalY={shownGalleryImages[0]?.focalY}
+        name={product.name}
+        priceEur={activeKit?.priceEur ?? null}
+        rating={product.rating}
+        reviewCount={testimonials.length}
+        justAdded={justAdded}
+        onAddToCart={handleAddToCart}
+      />
     </section>
   );
 }

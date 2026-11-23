@@ -20,9 +20,9 @@ export class ICardApiProvider implements PaymentProvider {
 
   async createPayment(order: OrderDraft): Promise<PaymentAttemptResult> {
     const totals = await calculateTotals(order.items);
-    if (!totals.isPriceConfirmed || totals.totalBgn === null) {
+    if (!totals.isPriceConfirmed || totals.totalEur === null) {
       throw new PaymentProviderError(
-        "Истинско плащане не може да бъде заявено без зададена истинска цена на продукта (priceBgn е TBD).",
+        "Истинско плащане не може да бъде заявено без зададена истинска цена на продукта (priceEur е TBD).",
       );
     }
     if (!order.customerIp) {
@@ -37,7 +37,7 @@ export class ICardApiProvider implements PaymentProvider {
 
     const { token } = await requestPaymentWidgetToken({
       orderId: order.id,
-      amountBgn: totals.totalBgn,
+      amountEur: totals.totalEur,
       customerIp: order.customerIp,
       customerName: order.customer.fullName,
       customerEmail: order.customer.email,

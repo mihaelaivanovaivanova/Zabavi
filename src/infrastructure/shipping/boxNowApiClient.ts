@@ -1,11 +1,14 @@
 import { ShippingProviderError } from "@/domain/shipping/types";
+import { getBoxNowSettings, isBoxNowConfigured } from "@/infrastructure/settings/boxNowSettingsService";
 
 /**
  * Low-level client for BOX NOW's Partner API, per the official "BOX NOW API
  * Integration — Partner API" manual (OAuth2 client-credentials grant +
  * `POST /api/v1/delivery-requests`). All values below are account-specific
  * and issued by BOX NOW only after partner registration
- * (integrationsupport@boxnow.bg) — never hardcoded, always read from env.
+ * (integrationsupport@boxnow.bg) — never hardcoded. Read from the
+ * admin-editable settings (see `boxNowSettingsService.ts`), which itself
+ * falls back to env vars for local use without a database.
  */
 
 interface BoxNowApiConfig {
@@ -19,41 +22,13 @@ interface BoxNowApiConfig {
   partnerId?: string;
 }
 
-function readConfig(): BoxNowApiConfig | null {
-  const apiUrl = process.env.BOXNOW_API_URL;
-  const clientId = process.env.BOXNOW_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.BOXNOW_OAUTH_CLIENT_SECRET;
-  const originLocationId = process.env.BOXNOW_ORIGIN_LOCATION_ID;
-  const originContactName = process.env.BOXNOW_ORIGIN_CONTACT_NAME;
-  const originContactEmail = process.env.BOXNOW_ORIGIN_CONTACT_EMAIL;
-  const originContactNumber = process.env.BOXNOW_ORIGIN_CONTACT_NUMBER;
-
-  if (
-    !apiUrl ||
-    !clientId ||
-    !clientSecret ||
-    !originLocationId ||
-    !originContactName ||
-    !originContactEmail ||
-    !originContactNumber
-  ) {
-    return null;
-  }
-
-  return {
-    apiUrl,
-    clientId,
-    clientSecret,
-    originLocationId,
-    originContactName,
-    originContactEmail,
-    originContactNumber,
-    partnerId: process.env.BOXNOW_PARTNER_ID,
-  };
+async function readConfig(): Promise<BoxNowApiConfig | null> {
+  if (!(await isBoxNowConfigured())) return null;
+  return getBoxNowSettings();
 }
 
-export function isBoxNowApiConfigured(): boolean {
-  return readConfig() !== null;
+export async function isBoxNowApiConfigured(): Promise<boolean> {
+  return isBoxNowConfigured();
 }
 
 interface CachedToken {
@@ -97,9 +72,9 @@ async function getAccessToken(config: BoxNowApiConfig): Promise<string> {
 
 export interface DeliveryRequestInput {
   orderNumber: string;
-  invoiceValueBgn: number;
+  invoiceValueEur: number;
   paymentMode: "prepaid" | "cod";
-  amountToBeCollectedBgn: number;
+  amountToBeCollectedEur: number;
   destinationLockerId: string;
   customerName: string;
   customerPhone: string;
@@ -114,7 +89,7 @@ export interface DeliveryRequestResult {
 export async function createBoxNowDeliveryRequest(
   input: DeliveryRequestInput,
 ): Promise<DeliveryRequestResult> {
-  const config = readConfig();
+  const config = await readConfig();
   if (!config) {
     throw new ShippingProviderError("BOX NOW Partner API credentials are not configured.");
   }
@@ -130,9 +105,9 @@ export async function createBoxNowDeliveryRequest(
     },
     body: JSON.stringify({
       orderNumber: input.orderNumber,
-      invoiceValue: input.invoiceValueBgn.toFixed(2),
+      invoiceValue: input.invoiceValueEur.toFixed(2),
       paymentMode: input.paymentMode,
-      amountToBeCollected: input.amountToBeCollectedBgn.toFixed(2),
+      amountToBeCollected: input.amountToBeCollectedEur.toFixed(2),
       allowReturn: true,
       origin: {
         locationId: config.originLocationId,
@@ -146,7 +121,7 @@ export async function createBoxNowDeliveryRequest(
         contactEmail: input.customerEmail,
         contactNumber: input.customerPhone,
       },
-      items: [{ id: input.orderNumber, name: "ЗАБАВЍ creative kit", value: input.invoiceValueBgn.toFixed(2), weight: 1 }],
+      items: [{ id: input.orderNumber, name: "ЗАБАВЍ creative kit", value: input.invoiceValueEur.toFixed(2), weight: 1 }],
     }),
   });
 

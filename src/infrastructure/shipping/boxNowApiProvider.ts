@@ -17,17 +17,17 @@ export class BoxNowApiProvider implements ShippingProvider {
     }
 
     const totals = await calculateTotals(order.items);
-    if (!totals.isPriceConfirmed || totals.totalBgn === null) {
+    if (!totals.isPriceConfirmed || totals.totalEur === null) {
       throw new ShippingProviderError(
-        "Истинска BOX NOW пратка не може да бъде създадена без зададена истинска цена на продукта (priceBgn е TBD).",
+        "Истинска BOX NOW пратка не може да бъде създадена без зададена истинска цена на продукта (priceEur е TBD).",
       );
     }
 
     const result = await createBoxNowDeliveryRequest({
       orderNumber: order.id,
-      invoiceValueBgn: totals.totalBgn,
+      invoiceValueEur: totals.totalEur,
       paymentMode: order.paymentMethod === "cash_on_delivery" ? "cod" : "prepaid",
-      amountToBeCollectedBgn: order.paymentMethod === "cash_on_delivery" ? totals.totalBgn : 0,
+      amountToBeCollectedEur: order.paymentMethod === "cash_on_delivery" ? totals.totalEur : 0,
       destinationLockerId: order.shippingDetails.lockerId,
       customerName: order.customer.fullName,
       customerPhone: order.customer.phone,
