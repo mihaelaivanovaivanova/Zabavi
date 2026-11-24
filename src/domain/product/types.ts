@@ -39,6 +39,8 @@ export interface Product {
   /** Short trust/USP badges shown under the hero tagline. */
   highlights: string[];
   illustrations: Illustration[];
+  /** Default heading/intro for the "Четирите илюстрации" section — overridden by `/admin/settings`, see `@/domain/content/types`. */
+  illustrationsSection: { heading: string; intro: string };
   variants: ProductVariant[];
   /** Price/photos are per-kit now — see `src/domain/kit/types.ts` and /admin/kits, not a single product-wide value. */
   currency: "EUR";
