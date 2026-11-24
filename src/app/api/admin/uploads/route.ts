@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { isOptimizableImage, optimizeImageBuffer } from "@/lib/optimizeImage";
 import { UPLOADS_DIR } from "@/lib/uploads";
 
 /**
@@ -66,7 +67,10 @@ export async function POST(request: Request) {
 
   const extension = EXTENSION_BY_TYPE[file.type];
   const filename = `${randomUUID()}.${extension}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
+  let bytes: Buffer = Buffer.from(await file.arrayBuffer());
+  if (isOptimizableImage(file.type)) {
+    bytes = await optimizeImageBuffer(bytes, file.type);
+  }
   // turbopackIgnore: writing to a runtime upload directory, not a build input to trace/bundle.
   await writeFile(path.join(/* turbopackIgnore: true */ UPLOADS_DIR, filename), bytes);
 
