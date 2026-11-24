@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // Next's built-in gzip/brotli compression re-chunks every response and
+  // strips any Content-Length we set, which breaks Range requests for
+  // uploaded video/images (Cloudflare can't slice a Range out of its cache
+  // without a known Content-Length — see the uploads route handler). Cloudflare
+  // sits in front of every request in production and already compresses
+  // responses at the edge, so Next doing it again only costs correctness.
+  compress: false,
   experimental: {
     // Our admin proxy (proxy.ts) gates /api/admin/uploads, so Next.js
     // buffers the whole request body (default cap 10MB) to let the route
