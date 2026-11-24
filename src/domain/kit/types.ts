@@ -9,6 +9,12 @@ export interface KitImage {
   focalY?: number;
 }
 
+export interface IllustrationContent {
+  title: string;
+  /** Empty string hides the description paragraph under this illustration's title on the landing page. */
+  description: string;
+}
+
 /**
  * Admin-configurable data for one product variant ("kit"): its own price,
  * compare-at price, cover photo, gallery, name and contents — set through
@@ -39,8 +45,17 @@ export interface KitDetails {
    * means that slot still shows its placeholder box.
    */
   illustrationImages: (KitImage | null)[];
+  /**
+   * Per-kit title/description for each "Четирите илюстрации" slot, aligned by
+   * index with `product.illustrations`. `null` means this kit has never been
+   * saved with custom illustration copy yet — callers fall back to
+   * `product.illustrations` for seed values, same as `contents`/`bonus`.
+   */
+  illustrationContent: IllustrationContent[] | null;
   /** Per-kit video shown in the "Какво има в кутията" section instead of its placeholder box. `null` means that kit still shows the placeholder. */
   boxContentsVideoUrl: string | null;
+  /** Poster frame shown before the box-contents video plays. `null` means the browser falls back to the video's own first frame. */
+  boxContentsVideoThumbnail: KitImage | null;
   updatedAt: string;
 }
 
@@ -57,7 +72,9 @@ export function defaultKitDetails(variantId: string): KitDetails {
     contents: null,
     bonus: null,
     illustrationImages: product.illustrations.map(() => null),
+    illustrationContent: null,
     boxContentsVideoUrl: null,
+    boxContentsVideoThumbnail: null,
     updatedAt: new Date(0).toISOString(),
   };
 }

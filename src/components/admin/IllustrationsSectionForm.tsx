@@ -10,12 +10,7 @@ type SaveState = { status: "idle" } | { status: "saving" } | { status: "saved" }
 export function IllustrationsSectionForm({ initial }: { initial: IllustrationsSectionContent }) {
   const [heading, setHeading] = useState(initial.heading);
   const [intro, setIntro] = useState(initial.intro);
-  const [items, setItems] = useState(initial.items);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
-
-  function updateItem(index: number, patch: Partial<{ title: string; description: string }>) {
-    setItems((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
-  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -24,7 +19,7 @@ export function IllustrationsSectionForm({ initial }: { initial: IllustrationsSe
     const response = await fetch("/api/admin/settings/illustrations", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ heading, intro, items }),
+      body: JSON.stringify({ heading, intro }),
     });
     const data = await response.json();
 
@@ -53,27 +48,10 @@ export function IllustrationsSectionForm({ initial }: { initial: IllustrationsSe
         placeholder="остави празно, за да няма текст"
       />
 
-      <div className="space-y-4">
-        <span className="text-sm font-medium text-ink-800">Илюстрации</span>
-        {items.map((item, index) => (
-          <div key={index} className="grid gap-3 rounded-xl border border-lavender-200 p-3 sm:grid-cols-2">
-            <InputField
-              id={`illustration-title-${index}`}
-              label={`Заглавие на илюстрация №${index + 1}`}
-              value={item.title}
-              onChange={(event) => updateItem(index, { title: event.target.value })}
-              required
-            />
-            <InputField
-              id={`illustration-description-${index}`}
-              label="Обяснение под заглавието"
-              value={item.description}
-              onChange={(event) => updateItem(index, { description: event.target.value })}
-              placeholder="остави празно, за да няма обяснение"
-            />
-          </div>
-        ))}
-      </div>
+      <p className="text-xs text-ink-700">
+        Заглавието и обяснението под всяка от четирите илюстрации се задават поотделно за всеки комплект, през
+        /admin/kits.
+      </p>
 
       {saveState.status === "error" ? (
         <p role="alert" className="text-sm text-burgundy-600">

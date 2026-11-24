@@ -4,14 +4,37 @@ import { IllustrationsShowcase } from "@/components/landing/IllustrationsShowcas
 import { SelectedVariantProvider } from "@/lib/SelectedVariantContext";
 import { product } from "@/config/site";
 
-function mockFetch(illustrationsContent: unknown) {
+function mockFetch(
+  illustrationsContent: unknown,
+  illustrationContent?: Array<{ title: string; description: string }> | null,
+) {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
       if (url === "/api/content/illustrations-section") {
         return Promise.resolve(new Response(JSON.stringify({ content: illustrationsContent }), { status: 200 }));
       }
-      return Promise.resolve(new Response(JSON.stringify({ kits: [] }), { status: 200 }));
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            kits: [
+              {
+                variantId: "christmas-magic",
+                priceEur: null,
+                compareAtPriceEur: null,
+                coverImage: null,
+                gallery: [],
+                illustrationImages: product.illustrations.map(() => null),
+                illustrationContent: illustrationContent ?? null,
+                boxContentsVideoUrl: null,
+                boxContentsVideoThumbnail: null,
+                updatedAt: new Date(0).toISOString(),
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
     }),
   );
 }
@@ -33,10 +56,6 @@ describe("IllustrationsShowcase", () => {
     mockFetch({
       heading: "Избери си настроение",
       intro: "Четири авторски скици, готови за боя.",
-      items: product.illustrations.map((illustration) => ({
-        title: illustration.title,
-        description: illustration.description,
-      })),
     });
   });
 
@@ -47,30 +66,40 @@ describe("IllustrationsShowcase", () => {
     expect(screen.getByText("Четири авторски скици, готови за боя.")).toBeInTheDocument();
   });
 
-  it("renders the admin-edited title and description for each illustration", async () => {
-    mockFetch({
-      heading: product.illustrationsSection.heading,
-      intro: product.illustrationsSection.intro,
-      items: product.illustrations.map((illustration, index) => ({
+  it("renders the kit's own title and description for each illustration", async () => {
+    mockFetch(
+      { heading: product.illustrationsSection.heading, intro: product.illustrationsSection.intro },
+      product.illustrations.map((illustration, index) => ({
         title: index === 0 ? "Зимна приказка" : illustration.title,
         description: index === 0 ? "Контурна скица с елени и снежинки." : illustration.description,
       })),
-    });
+    );
     renderShowcase();
 
     await waitFor(() => expect(screen.getByText("Зимна приказка")).toBeInTheDocument());
     expect(screen.getByText("Контурна скица с елени и снежинки.")).toBeInTheDocument();
   });
 
+  it("falls back to the config default title/description when the kit has none saved", async () => {
+    mockFetch(
+      { heading: product.illustrationsSection.heading, intro: product.illustrationsSection.intro },
+      null,
+    );
+    renderShowcase();
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 3, name: product.illustrations[0].title })).toBeInTheDocument(),
+    );
+  });
+
   it("hides the description paragraph for an illustration whose description was cleared", async () => {
-    mockFetch({
-      heading: product.illustrationsSection.heading,
-      intro: product.illustrationsSection.intro,
-      items: product.illustrations.map((illustration, index) => ({
+    mockFetch(
+      { heading: product.illustrationsSection.heading, intro: product.illustrationsSection.intro },
+      product.illustrations.map((illustration, index) => ({
         title: illustration.title,
         description: index === 0 ? "" : illustration.description,
       })),
-    });
+    );
     renderShowcase();
 
     await waitFor(() =>
@@ -82,14 +111,7 @@ describe("IllustrationsShowcase", () => {
   });
 
   it("hides the section intro paragraph when it was cleared", async () => {
-    mockFetch({
-      heading: product.illustrationsSection.heading,
-      intro: "",
-      items: product.illustrations.map((illustration) => ({
-        title: illustration.title,
-        description: illustration.description,
-      })),
-    });
+    mockFetch({ heading: product.illustrationsSection.heading, intro: "" });
     renderShowcase();
 
     await waitFor(() => expect(screen.getByText(product.illustrationsSection.heading)).toBeInTheDocument());

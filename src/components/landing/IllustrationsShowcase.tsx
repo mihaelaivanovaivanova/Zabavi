@@ -22,7 +22,7 @@ export function IllustrationsShowcase() {
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {product.illustrations.map((illustration, index) => {
           const image = activeKit?.illustrationImages?.[index];
-          const item = content.items[index] ?? illustration;
+          const item = activeKit?.illustrationContent?.[index] ?? illustration;
           return (
             <div key={illustration.title}>
               {image ? (

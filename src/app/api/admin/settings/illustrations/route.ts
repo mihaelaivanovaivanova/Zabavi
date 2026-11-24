@@ -8,14 +8,6 @@ import {
 const updateSchema = z.object({
   heading: z.string().trim().min(1, "Заглавието е задължително."),
   intro: z.string(),
-  items: z
-    .array(
-      z.object({
-        title: z.string().trim().min(1, "Заглавието на илюстрацията е задължително."),
-        description: z.string(),
-      }),
-    )
-    .length(4),
 });
 
 /** Gated by proxy.ts — only reachable with a valid admin session cookie. */

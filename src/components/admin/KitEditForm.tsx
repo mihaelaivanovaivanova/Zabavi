@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { KitDetails, KitImage } from "@/domain/kit/types";
+import type { IllustrationContent, KitDetails, KitImage } from "@/domain/kit/types";
 import type { ProductVariant } from "@/domain/product/types";
 import { Button } from "@/components/ui/Button";
-import { inputClasses } from "@/components/ui/Field";
+import { InputField, inputClasses } from "@/components/ui/Field";
 import { product } from "@/config/site";
 import { clampFocalPercent, moveItemTo } from "@/lib/listOrder";
 
@@ -169,8 +169,15 @@ export function KitEditForm({
   const [illustrationImages, setIllustrationImages] = useState<(KitImage | null)[]>(
     initialKit.illustrationImages ?? product.illustrations.map(() => null),
   );
+  const [illustrationContent, setIllustrationContent] = useState<IllustrationContent[]>(
+    initialKit.illustrationContent ??
+      product.illustrations.map((illustration) => ({ title: illustration.title, description: illustration.description })),
+  );
   const [boxContentsVideoUrl, setBoxContentsVideoUrl] = useState<string | null>(
     initialKit.boxContentsVideoUrl ?? null,
+  );
+  const [boxContentsVideoThumbnail, setBoxContentsVideoThumbnail] = useState<KitImage | null>(
+    initialKit.boxContentsVideoThumbnail ?? null,
   );
   const [label, setLabel] = useState(initialKit.label ?? variant.label);
   const [intro, setIntro] = useState(initialKit.intro ?? variant.intro ?? "");
@@ -182,6 +189,7 @@ export function KitEditForm({
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
   const [uploadingIllustrationIndex, setUploadingIllustrationIndex] = useState<number | null>(null);
   const [isUploadingBoxVideo, setIsUploadingBoxVideo] = useState(false);
+  const [isUploadingBoxVideoThumbnail, setIsUploadingBoxVideoThumbnail] = useState(false);
   const [activePositioner, setActivePositioner] = useState<"cover" | number | null>(null);
   const [activeIllustrationPositioner, setActiveIllustrationPositioner] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -281,6 +289,10 @@ export function KitEditForm({
     );
   }
 
+  function updateIllustrationContent(index: number, patch: Partial<IllustrationContent>) {
+    setIllustrationContent((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  }
+
   async function handleBoxVideoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -292,6 +304,20 @@ export function KitEditForm({
       setSaveState({ status: "error", message: error instanceof Error ? error.message : "Качването се провали." });
     } finally {
       setIsUploadingBoxVideo(false);
+    }
+  }
+
+  async function handleBoxVideoThumbnailUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setIsUploadingBoxVideoThumbnail(true);
+    try {
+      setBoxContentsVideoThumbnail(await uploadFile(file));
+    } catch (error) {
+      setSaveState({ status: "error", message: error instanceof Error ? error.message : "Качването се провали." });
+    } finally {
+      setIsUploadingBoxVideoThumbnail(false);
     }
   }
 
@@ -313,7 +339,9 @@ export function KitEditForm({
         contents: contents.map((item) => item.trim()).filter((item) => item !== ""),
         bonus: bonus.map((item) => item.trim()).filter((item) => item !== ""),
         illustrationImages,
+        illustrationContent,
         boxContentsVideoUrl,
+        boxContentsVideoThumbnail,
       }),
     });
     const data = await response.json();
@@ -551,8 +579,21 @@ export function KitEditForm({
                       <span className="px-1 text-center text-[10px] text-lavender-600">Няма</span>
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-ink-800">{illustration.title}</p>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <InputField
+                      id={`illustration-title-${index}`}
+                      label={`Заглавие на илюстрация №${index + 1}`}
+                      value={illustrationContent[index].title}
+                      onChange={(event) => updateIllustrationContent(index, { title: event.target.value })}
+                      required
+                    />
+                    <InputField
+                      id={`illustration-description-${index}`}
+                      label="Обяснение под заглавието"
+                      value={illustrationContent[index].description}
+                      onChange={(event) => updateIllustrationContent(index, { description: event.target.value })}
+                      placeholder="остави празно, за да няма обяснение"
+                    />
                     <div className="mt-1 flex flex-wrap items-center gap-3">
                       <label className="cursor-pointer text-sm font-medium text-burgundy-700 underline underline-offset-4">
                         {uploadingIllustrationIndex === index ? "Качване…" : image ? "Смени снимката" : "Качи снимка"}
@@ -626,6 +667,48 @@ export function KitEditForm({
                 className="text-left text-sm text-ink-700 underline underline-offset-4"
               >
                 Премахни видеото
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <span className="text-sm font-medium text-ink-800">Thumbnail на видеото</span>
+        <p className="text-xs text-ink-700">
+          Незадължително — показва се преди пускане на видеото. Без него браузърът показва първия кадър на видеото.
+        </p>
+        <div className="mt-2 flex items-start gap-4">
+          <div className="flex h-24 w-40 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-lavender-300 bg-lavender-50">
+            {boxContentsVideoThumbnail ? (
+              // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded asset, not an optimized remote image
+              <img
+                src={boxContentsVideoThumbnail.url}
+                alt={boxContentsVideoThumbnail.alt}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="px-2 text-center text-xs text-lavender-600">Няма thumbnail</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="cursor-pointer text-sm font-medium text-burgundy-700 underline underline-offset-4">
+              {isUploadingBoxVideoThumbnail ? "Качване…" : boxContentsVideoThumbnail ? "Смени thumbnail-а" : "Качи thumbnail"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                className="hidden"
+                onChange={handleBoxVideoThumbnailUpload}
+                disabled={isUploadingBoxVideoThumbnail}
+              />
+            </label>
+            {boxContentsVideoThumbnail ? (
+              <button
+                type="button"
+                onClick={() => setBoxContentsVideoThumbnail(null)}
+                className="text-left text-sm text-ink-700 underline underline-offset-4"
+              >
+                Премахни thumbnail-а
               </button>
             ) : null}
           </div>

@@ -9,7 +9,9 @@ import { useSelectedVariant } from "@/lib/SelectedVariantContext";
 export function WhatsInTheBox() {
   const { selectedVariantId } = useSelectedVariant();
   const { kits } = useKits();
-  const videoUrl = kits.find((kit) => kit.variantId === selectedVariantId)?.boxContentsVideoUrl;
+  const kit = kits.find((kit) => kit.variantId === selectedVariantId);
+  const videoUrl = kit?.boxContentsVideoUrl;
+  const thumbnailUrl = kit?.boxContentsVideoThumbnail?.url;
 
   return (
     <Section id="whats-inside" tone="lavender">
@@ -17,6 +19,7 @@ export function WhatsInTheBox() {
         {videoUrl ? (
           <video
             src={videoUrl}
+            poster={thumbnailUrl}
             controls
             playsInline
             className="aspect-[9/16] w-full max-w-sm mx-auto rounded-2xl bg-ink-900/5 object-cover"

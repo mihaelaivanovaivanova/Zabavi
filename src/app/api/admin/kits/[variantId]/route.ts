@@ -10,6 +10,11 @@ const kitImageSchema = z.object({
   focalY: z.number().min(0).max(100).optional(),
 });
 
+const illustrationContentSchema = z.object({
+  title: z.string().trim().min(1, "Заглавието на илюстрацията е задължително."),
+  description: z.string(),
+});
+
 const kitUpdateSchema = z.object({
   priceEur: z.number().positive().nullable(),
   compareAtPriceEur: z.number().positive().nullable(),
@@ -21,7 +26,9 @@ const kitUpdateSchema = z.object({
   contents: z.array(z.string().trim().min(1)),
   bonus: z.array(z.string().trim().min(1)),
   illustrationImages: z.array(kitImageSchema.nullable()).length(product.illustrations.length),
+  illustrationContent: z.array(illustrationContentSchema).length(product.illustrations.length),
   boxContentsVideoUrl: z.string().min(1).nullable(),
+  boxContentsVideoThumbnail: kitImageSchema.nullable(),
 });
 
 /** Gated by proxy.ts — only reachable with a valid admin session cookie. */
@@ -61,7 +68,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ vari
     contents: parsed.data.contents,
     bonus: parsed.data.bonus,
     illustrationImages: parsed.data.illustrationImages,
+    illustrationContent: parsed.data.illustrationContent,
     boxContentsVideoUrl: parsed.data.boxContentsVideoUrl,
+    boxContentsVideoThumbnail: parsed.data.boxContentsVideoThumbnail,
     updatedAt: new Date().toISOString(),
   });
 

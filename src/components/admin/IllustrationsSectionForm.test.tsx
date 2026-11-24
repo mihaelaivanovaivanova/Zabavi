@@ -6,12 +6,6 @@ import type { IllustrationsSectionContent } from "@/domain/content/types";
 const initial: IllustrationsSectionContent = {
   heading: "Четирите илюстрации",
   intro: "Избери си настроение.",
-  items: [
-    { title: "Илюстрация №1", description: "Описание 1" },
-    { title: "Илюстрация №2", description: "Описание 2" },
-    { title: "Илюстрация №3", description: "Описание 3" },
-    { title: "Илюстрация №4", description: "Описание 4" },
-  ],
 };
 
 afterEach(() => {
@@ -19,15 +13,14 @@ afterEach(() => {
 });
 
 describe("IllustrationsSectionForm", () => {
-  it("submits the edited heading, intro and per-illustration title/description", async () => {
+  it("submits the edited heading and intro", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: initial }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<IllustrationsSectionForm initial={initial} />);
 
     fireEvent.change(screen.getByLabelText("Заглавие на секцията"), { target: { value: "Нашите скици" } });
-    fireEvent.change(screen.getByLabelText("Заглавие на илюстрация №1"), { target: { value: "Зимна приказка" } });
-    fireEvent.change(screen.getAllByLabelText("Обяснение под заглавието")[0], { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText("Текст под заглавието"), { target: { value: "" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Запази" }));
 
@@ -39,8 +32,7 @@ describe("IllustrationsSectionForm", () => {
     );
     const body = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(body.heading).toBe("Нашите скици");
-    expect(body.items[0]).toEqual({ title: "Зимна приказка", description: "" });
-    expect(body.items[1]).toEqual({ title: "Илюстрация №2", description: "Описание 2" });
+    expect(body.intro).toBe("");
   });
 
   it("shows the error message when the save request fails", async () => {
