@@ -1,9 +1,26 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
-import { Readable } from "node:stream";
 import { NextResponse } from "next/server";
 import { UPLOADS_DIR } from "@/lib/uploads";
+
+/**
+ * Reads a byte range into a Buffer instead of returning the stream directly.
+ * A streamed Response body loses its Content-Length in this environment
+ * (the response falls back to `Transfer-Encoding: chunked`), and without a
+ * known Content-Length Cloudflare cannot slice Range requests out of its
+ * cache — it just re-serves the full object for every request, forcing
+ * mobile clients to download the entire file before video can start
+ * playing. A Buffer body has a definite length, so Content-Length survives.
+ */
+async function readFileRange(filePath: string, start: number, end: number): Promise<ArrayBuffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of createReadStream(filePath, { start, end })) {
+    chunks.push(chunk as Buffer);
+  }
+  const bytes = Buffer.concat(chunks);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
 
 const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   jpg: "image/jpeg",
@@ -24,10 +41,11 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
  * production. A Route Handler always runs live, so it can read a file the
  * upload endpoint wrote moments ago.
  *
- * Streams the file and honors Range requests instead of buffering the whole
- * thing in memory — required for video: without Range support, the browser
- * can't start playback (or seek) until the entire file has downloaded, which
- * makes anything above a few MB feel like it's hanging.
+ * Honors Range requests — required for video: without Range support, the
+ * browser can't start playback (or seek) until the entire file has
+ * downloaded, which makes anything above a few MB feel like it's hanging.
+ * Reads only the requested range into memory (see `readFileRange`), so a
+ * seek or a Cloudflare range-cache fill doesn't buffer the whole file.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ filename: string }> }) {
   const { filename } = await params;
@@ -59,8 +77,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
 
   const range = request.headers.get("range");
   if (!range) {
-    const stream = Readable.toWeb(createReadStream(filePath)) as ReadableStream;
-    return new NextResponse(stream, { headers: { ...baseHeaders, "Content-Length": String(fileSize) } });
+    const body = await readFileRange(filePath, 0, fileSize - 1);
+    return new NextResponse(body, { headers: { ...baseHeaders, "Content-Length": String(fileSize) } });
   }
 
   const match = /^bytes=(\d*)-(\d*)$/.exec(range);
@@ -70,8 +88,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
     return new NextResponse(null, { status: 416, headers: { "Content-Range": `bytes */${fileSize}` } });
   }
 
-  const stream = Readable.toWeb(createReadStream(filePath, { start, end })) as ReadableStream;
-  return new NextResponse(stream, {
+  const body = await readFileRange(filePath, start, end);
+  return new NextResponse(body, {
     status: 206,
     headers: {
       ...baseHeaders,
