@@ -3,12 +3,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { isOptimizableImage, optimizeImageBuffer } from "@/lib/optimizeImage";
+import { optimizeVideoBuffer } from "@/lib/optimizeVideo";
 import { UPLOADS_DIR } from "@/lib/uploads";
 
 /**
  * Admin-only image/video upload (gated by proxy.ts). Written outside
- * `public/` — see `api/uploads/kits/[filename]/route.ts` for why — and
- * served back through that Route Handler.
+ * `public/` — see `server.mjs` for why — and served back from there.
  *
  * Caveat: this is local disk storage. It works for local dev and any
  * single-instance deploy with a persistent disk, but most serverless/
@@ -70,6 +70,8 @@ export async function POST(request: Request) {
   let bytes: Buffer = Buffer.from(await file.arrayBuffer());
   if (isOptimizableImage(file.type)) {
     bytes = await optimizeImageBuffer(bytes, file.type);
+  } else if (file.type === "video/mp4") {
+    bytes = await optimizeVideoBuffer(bytes);
   }
   // turbopackIgnore: writing to a runtime upload directory, not a build input to trace/bundle.
   await writeFile(path.join(/* turbopackIgnore: true */ UPLOADS_DIR, filename), bytes);
