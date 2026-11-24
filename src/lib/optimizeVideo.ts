@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import ffmpegPath from "ffmpeg-static";
+import ffmpegStaticPath from "ffmpeg-static";
 
 /**
  * The box-contents video plays in a 9:16 player at most ~400px wide on
@@ -16,17 +17,25 @@ import ffmpegPath from "ffmpeg-static";
  */
 const MAX_HEIGHT_PX = 1280;
 
-export async function optimizeVideoBuffer(input: Buffer): Promise<Buffer> {
-  if (!ffmpegPath) {
-    throw new Error("ffmpeg binary not found (ffmpeg-static did not resolve a path for this platform).");
-  }
+/**
+ * `ffmpeg-static`'s postinstall download doesn't survive Railway's build
+ * (the binary isn't present at runtime there — see railpack.json, which
+ * installs the real `ffmpeg` apt package instead). Prefer the downloaded
+ * binary when it actually exists (local dev, where there's no system
+ * ffmpeg), otherwise fall back to whatever `ffmpeg` is on PATH.
+ */
+function resolveFfmpegBinary(): string {
+  if (ffmpegStaticPath && existsSync(ffmpegStaticPath)) return ffmpegStaticPath;
+  return "ffmpeg";
+}
 
+export async function optimizeVideoBuffer(input: Buffer): Promise<Buffer> {
   const dir = await mkdtemp(path.join(tmpdir(), "zabavi-video-"));
   const inputPath = path.join(dir, "input");
   const outputPath = path.join(dir, "output.mp4");
   try {
     await writeFile(inputPath, input);
-    await runFfmpeg(ffmpegPath, inputPath, outputPath);
+    await runFfmpeg(resolveFfmpegBinary(), inputPath, outputPath);
     return await readFile(outputPath);
   } finally {
     await rm(dir, { recursive: true, force: true });
