@@ -184,6 +184,7 @@ export function KitEditForm({
   const [badge, setBadge] = useState(initialKit.badge ?? variant.badge ?? "");
   const [contents, setContents] = useState<string[]>(initialKit.contents ?? variant.contents ?? []);
   const [bonus, setBonus] = useState<string[]>(initialKit.bonus ?? variant.bonus ?? []);
+  const [boxContents, setBoxContents] = useState<string[]>(initialKit.boxContents ?? product.boxContents);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
@@ -342,6 +343,7 @@ export function KitEditForm({
         illustrationContent,
         boxContentsVideoUrl,
         boxContentsVideoThumbnail,
+        boxContents: boxContents.map((item) => item.trim()).filter((item) => item !== ""),
       }),
     });
     const data = await response.json();
@@ -714,6 +716,15 @@ export function KitEditForm({
           </div>
         </div>
       </div>
+
+      <ListEditor
+        label="Списък „Какво има в кутията“"
+        helperText="Показва се до видеото/placeholder-а в секция „Какво има в кутията“."
+        items={boxContents}
+        onChange={setBoxContents}
+        addLabel="+ Добави елемент"
+        placeholder="напр. Четка за рисуване"
+      />
 
       {saveState.status === "error" ? (
         <p role="alert" className="text-sm text-burgundy-600">

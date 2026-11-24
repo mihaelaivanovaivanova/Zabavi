@@ -9,6 +9,7 @@ function mockKitsResponse(
     variantId: string;
     boxContentsVideoUrl?: string | null;
     boxContentsVideoThumbnail?: { url: string; alt: string } | null;
+    boxContents?: string[] | null;
   }>,
 ) {
   vi.stubGlobal(
@@ -24,6 +25,7 @@ function mockKitsResponse(
             gallery: [],
             boxContentsVideoUrl: k.boxContentsVideoUrl ?? null,
             boxContentsVideoThumbnail: k.boxContentsVideoThumbnail ?? null,
+            boxContents: k.boxContents ?? null,
             updatedAt: new Date(0).toISOString(),
           })),
         }),
@@ -89,5 +91,29 @@ describe("WhatsInTheBox", () => {
       return element!;
     });
     expect(video).not.toHaveAttribute("poster");
+  });
+
+  it("renders the kit's own box-contents list instead of the config default", async () => {
+    mockKitsResponse([{ variantId, boxContents: ["Четка номер 2", "Комплект от 8 акварелни капки"] }]);
+    render(
+      <SelectedVariantProvider defaultVariantId={variantId}>
+        <WhatsInTheBox />
+      </SelectedVariantProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText("Четка номер 2")).toBeInTheDocument());
+    expect(screen.getByText("Комплект от 8 акварелни капки")).toBeInTheDocument();
+    expect(screen.queryByText(product.boxContents[0])).not.toBeInTheDocument();
+  });
+
+  it("falls back to the config default box-contents list when the kit has none saved", async () => {
+    mockKitsResponse([{ variantId }]);
+    render(
+      <SelectedVariantProvider defaultVariantId={variantId}>
+        <WhatsInTheBox />
+      </SelectedVariantProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText(product.boxContents[0])).toBeInTheDocument());
   });
 });

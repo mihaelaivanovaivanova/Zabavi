@@ -56,6 +56,12 @@ export interface KitDetails {
   boxContentsVideoUrl: string | null;
   /** Poster frame shown before the box-contents video plays. `null` means the browser falls back to the video's own first frame. */
   boxContentsVideoThumbnail: KitImage | null;
+  /**
+   * Per-kit bullet list for the "Какво има в кутията" section. `null` means
+   * this kit has never been saved with a custom list yet — callers fall back
+   * to `product.boxContents`, same as `contents`/`bonus`.
+   */
+  boxContents: string[] | null;
   updatedAt: string;
 }
 
@@ -75,6 +81,7 @@ export function defaultKitDetails(variantId: string): KitDetails {
     illustrationContent: null,
     boxContentsVideoUrl: null,
     boxContentsVideoThumbnail: null,
+    boxContents: null,
     updatedAt: new Date(0).toISOString(),
   };
 }

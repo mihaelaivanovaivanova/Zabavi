@@ -12,6 +12,7 @@ export function WhatsInTheBox() {
   const kit = kits.find((kit) => kit.variantId === selectedVariantId);
   const videoUrl = kit?.boxContentsVideoUrl;
   const thumbnailUrl = kit?.boxContentsVideoThumbnail?.url;
+  const boxContents = kit?.boxContents ?? product.boxContents;
 
   return (
     <Section id="whats-inside" tone="lavender">
@@ -35,7 +36,7 @@ export function WhatsInTheBox() {
         <div>
           <h2 className="text-3xl font-semibold text-ink-900">Какво има в кутията</h2>
           <ul className="mt-6 space-y-3">
-            {product.boxContents.map((item) => (
+            {boxContents.map((item) => (
               <li key={item} className="flex gap-3 text-ink-800">
                 <span aria-hidden className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500" />
                 <span>{item}</span>
