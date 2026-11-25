@@ -30,22 +30,53 @@ const objections = [
 export function Objections() {
   return (
     <Section tone="burgundy">
-      <h2 className="text-center text-3xl font-semibold">Ами ако…</h2>
-      <div className="mx-auto mt-10 max-w-2xl space-y-6">
-        {objections.map((item) => (
-          <div key={item.question} className="space-y-2">
-            <div className="flex justify-start">
-              <p className="max-w-[85%] rounded-2xl rounded-bl-sm bg-paper-50/10 px-4 py-3 text-paper-50 sm:max-w-[70%]">
-                {item.question}
-              </p>
+      <div className="relative mx-auto max-w-2xl">
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative character illustration, not a content photo */}
+        <img
+          src="/images/illustrations/objection-thinking.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute -left-2 -top-6 w-14 object-contain sm:-left-24 sm:-top-10 sm:w-28 lg:-left-32 lg:w-36"
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative character illustration, not a content photo */}
+        <img
+          src="/images/illustrations/objection-happy.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute -right-2 -top-6 w-14 object-contain sm:-right-24 sm:-top-10 sm:w-28 lg:-right-32 lg:w-36"
+        />
+
+        <h2 className="text-center text-3xl font-semibold text-paper-50">Ами ако…</h2>
+        <div className="mt-10 space-y-6">
+          {objections.map((item) => (
+            <div key={item.question} className="space-y-2">
+              <div className="flex justify-start">
+                <div className="relative max-w-[85%] px-5 py-4 sm:max-w-[70%]">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- decorative watercolor speech-bubble background, not a content photo */}
+                  <img
+                    src="/images/objection-bubble-question.webp"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full object-fill"
+                  />
+                  <p className="relative text-ink-900">{item.question}</p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <div className="relative max-w-[85%] px-5 py-4 sm:max-w-[70%]">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- decorative watercolor speech-bubble background, not a content photo */}
+                  <img
+                    src="/images/objection-bubble-answer.webp"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full object-fill"
+                  />
+                  <p className="relative text-ink-800">{item.answer}</p>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-paper-50 px-4 py-3 text-ink-800 sm:max-w-[70%]">
-                {item.answer}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </Section>
   );
