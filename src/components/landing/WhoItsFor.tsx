@@ -46,7 +46,7 @@ const audiences = [
     image: "/images/illustrations/learn-by-trying-joy.webp",
     imageNoIndent: true,
     imageClassName:
-      "absolute bottom-0 right-14 w-28 translate-x-3 translate-y-3 object-contain sm:w-40 sm:right-24 sm:translate-x-6 sm:translate-y-6 lg:w-48 lg:right-28 lg:translate-x-8 lg:translate-y-8",
+      "absolute bottom-0 right-14 w-28 translate-x-3 translate-y-3 object-contain sm:w-40 sm:right-24 sm:translate-x-6 sm:translate-y-6 lg:w-48 lg:right-28 lg:translate-x-4 lg:translate-y-4",
     paragraphs: [
       "Към всяка скица има видео урок с вариант на завършена картина и акварелни техники, които да приложиш на практика.",
       "Гледаш, пробваш и постепенно откриваш какво може твоята четка.",
