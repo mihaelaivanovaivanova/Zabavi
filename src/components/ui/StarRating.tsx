@@ -1,3 +1,5 @@
+"use client";
+
 interface StarRatingProps {
   /** Rating out of 5. */
   value: number;
@@ -5,6 +7,8 @@ interface StarRatingProps {
   count?: number;
   /** Tailwind size classes for each star. Defaults to a compact size. */
   starClassName?: string;
+  /** Makes the stars clickable (a rating picker) instead of a read-only display. Omit for the original display-only behavior. */
+  onChange?: (next: number) => void;
 }
 
 function Star({ filled, className }: { filled: boolean; className: string }) {
@@ -15,7 +19,30 @@ function Star({ filled, className }: { filled: boolean; className: string }) {
   );
 }
 
-export function StarRating({ value, count, starClassName = "h-4 w-4" }: StarRatingProps) {
+export function StarRating({ value, count, starClassName = "h-4 w-4", onChange }: StarRatingProps) {
+  if (onChange) {
+    return (
+      <div className="flex gap-1" role="radiogroup" aria-label="Оценка от 1 до 5 звезди">
+        {Array.from({ length: 5 }, (_, index) => {
+          const starValue = index + 1;
+          return (
+            <button
+              key={index}
+              type="button"
+              role="radio"
+              aria-checked={value === starValue}
+              aria-label={`${starValue} звезди`}
+              onClick={() => onChange(starValue)}
+              className="cursor-pointer"
+            >
+              <Star filled={index < value} className={starClassName} />
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2">
       <div className="flex" role="img" aria-label={`Рейтинг ${value} от 5`}>

@@ -27,5 +27,6 @@ export const config = {
     "/api/admin/kits/:path*",
     "/api/admin/uploads/:path*",
     "/api/admin/settings/:path*",
+    "/api/admin/reviews/:path*",
   ],
 };

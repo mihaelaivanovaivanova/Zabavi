@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { testimonials } from "@/config/site";
@@ -28,6 +28,18 @@ function stubMatchMedia(initialMatches: boolean) {
       listener?.();
     },
   };
+}
+
+function mockReviewsFetch(reviews: Array<{ id: string; rating: number | null; body: string; displayName: string }>) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ reviews: reviews.map((review) => ({ ...review, createdAt: new Date(0).toISOString() })) }),
+        { status: 200 },
+      ),
+    ),
+  );
 }
 
 beforeEach(() => {
@@ -87,5 +99,29 @@ describe("Testimonials", () => {
     // still valid on mobile, so it should stay rather than reset to page 1.
     expect(screen.getByText(testimonials[3].author)).toBeInTheDocument();
     expect(screen.queryByText(testimonials[6].author)).not.toBeInTheDocument();
+  });
+
+  it("renders admin-approved reviews instead of the legacy testimonials once loaded", async () => {
+    mockReviewsFetch([{ id: "r1", rating: 4, body: "Нов истински отзив.", displayName: "Нов клиент" }]);
+    render(<Testimonials />);
+
+    await waitFor(() => expect(screen.getByText("Нов клиент")).toBeInTheDocument());
+    expect(screen.getByText("„Нов истински отзив.“")).toBeInTheDocument();
+    expect(screen.queryByText(testimonials[0].author)).not.toBeInTheDocument();
+  });
+
+  it("shows 'Анонимен' for a review submitted anonymously", async () => {
+    mockReviewsFetch([{ id: "r1", rating: 5, body: "Анонимен отзив.", displayName: "Анонимен" }]);
+    render(<Testimonials />);
+
+    await waitFor(() => expect(screen.getByText("Анонимен")).toBeInTheDocument());
+  });
+
+  it("opens the review wizard when 'Остави отзив' is clicked", () => {
+    render(<Testimonials />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Остави отзив" }));
+
+    expect(screen.getByText("Как бихте оценили този продукт?")).toBeInTheDocument();
   });
 });

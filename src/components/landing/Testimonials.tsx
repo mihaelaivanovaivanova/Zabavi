@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { Section } from "@/components/ui/Section";
 import { StarRating } from "@/components/ui/StarRating";
-import { product, testimonials } from "@/config/site";
+import { Button } from "@/components/ui/Button";
+import { product } from "@/config/site";
+import { useReviewsContent } from "@/lib/useReviewsContent";
+import { ReviewWizardModal } from "@/components/landing/ReviewWizardModal";
 
 const DESKTOP_PAGE_SIZE = 6;
 const MOBILE_PAGE_SIZE = 3;
@@ -13,6 +16,8 @@ const DESKTOP_MEDIA_QUERY = "(min-width: 640px)";
 export function Testimonials() {
   const [isDesktop, setIsDesktop] = useState(true);
   const [page, setPage] = useState(0);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const { reviews } = useReviewsContent();
 
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_MEDIA_QUERY);
@@ -23,32 +28,39 @@ export function Testimonials() {
   }, []);
 
   const pageSize = isDesktop ? DESKTOP_PAGE_SIZE : MOBILE_PAGE_SIZE;
-  const totalPages = Math.max(1, Math.ceil(testimonials.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(reviews.length / pageSize));
   // Clamped at render time rather than written back via an effect, so
   // resizing past the current page's range doesn't throw the visitor back
   // to the start of the list — it just settles on the new last page.
   const currentPage = Math.min(page, totalPages - 1);
 
-  if (testimonials.length === 0) return null;
-
-  const visible = testimonials.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
+  const visible = reviews.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
 
   return (
     <Section tone="lavender">
       <div className="text-center">
         <h2 className="text-3xl font-semibold text-ink-900">Какво казват клиентите</h2>
         <div className="mt-4 flex justify-center">
-          <StarRating value={product.rating} count={testimonials.length} starClassName="h-7 w-7" />
+          <StarRating value={product.rating} count={reviews.length} starClassName="h-7 w-7" />
         </div>
+        <Button type="button" variant="secondary" className="mt-4" onClick={() => setIsWizardOpen(true)}>
+          Остави отзив
+        </Button>
       </div>
-      <ul className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {visible.map((testimonial) => (
-          <li key={testimonial.author} className="rounded-xl border border-lavender-200 bg-paper-100 p-5">
-            <p className="text-ink-800">„{testimonial.quote}“</p>
-            <p className="mt-4 text-sm font-semibold text-ink-900">{testimonial.author}</p>
-          </li>
-        ))}
-      </ul>
+
+      {visible.length > 0 ? (
+        <ul className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((review) => (
+            <li key={review.id} className="rounded-xl border border-lavender-200 bg-paper-100 p-5">
+              {review.rating !== null ? (
+                <StarRating value={review.rating} starClassName="h-4 w-4" />
+              ) : null}
+              <p className={review.rating !== null ? "mt-2 text-ink-800" : "text-ink-800"}>„{review.body}“</p>
+              <p className="mt-4 text-sm font-semibold text-ink-900">{review.displayName}</p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       {totalPages > 1 ? (
         <div className="mt-8 flex items-center justify-center gap-4">
@@ -86,6 +98,8 @@ export function Testimonials() {
           </button>
         </div>
       ) : null}
+
+      <ReviewWizardModal isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} />
     </Section>
   );
 }
