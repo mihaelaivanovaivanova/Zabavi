@@ -37,7 +37,7 @@ export function Objections() {
                     aria-hidden="true"
                     className="absolute inset-0 h-full w-full object-fill"
                   />
-                  <p className="relative text-ink-900">{item.question}</p>
+                  <p className="relative text-center text-ink-900">{item.question}</p>
                 </div>
               </div>
               <div className="flex justify-end">
@@ -49,7 +49,7 @@ export function Objections() {
                     aria-hidden="true"
                     className="absolute inset-0 h-full w-full object-fill"
                   />
-                  <p className="relative text-ink-800">{item.answer}</p>
+                  <p className="relative text-center text-ink-800">{item.answer}</p>
                 </div>
               </div>
             </div>
