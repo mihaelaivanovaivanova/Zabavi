@@ -46,16 +46,25 @@ export function WhatsInTheBox() {
           </ul>
 
           {boxContentsExtra.length > 0 ? (
-            <div className="mt-6">
-              <p className="text-sm font-semibold text-ink-900">Получавате още:</p>
-              <ul className="mt-2 space-y-2">
-                {boxContentsExtra.map((item) => (
-                  <li key={item} className="flex gap-3 text-ink-800">
-                    <span aria-hidden className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="relative mt-6 p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element -- decorative torn-paper background, not a content photo */}
+              <img
+                src="/images/bonus-banner.webp"
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-fill"
+              />
+              <div className="relative">
+                <p className="text-sm font-semibold text-ink-900">Получавате още:</p>
+                <ul className="mt-2 space-y-2">
+                  {boxContentsExtra.map((item) => (
+                    <li key={item} className="flex gap-3 text-ink-800">
+                      <span aria-hidden className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           ) : null}
         </div>
