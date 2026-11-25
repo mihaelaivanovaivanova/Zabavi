@@ -25,6 +25,7 @@ export function IllustrationsShowcase() {
           const item = activeKit?.illustrationContent?.[index] ?? illustration;
           return (
             <div key={illustration.title}>
+              <h3 className="mb-3 text-center text-lg font-medium text-ink-900">{item.title}</h3>
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded asset, not an optimized remote image
                 <img
@@ -36,9 +37,8 @@ export function IllustrationsShowcase() {
               ) : (
                 <PlaceholderImage label={illustration.image.label} alt={illustration.image.alt} aspect="portrait" />
               )}
-              <h3 className="mt-3 text-center font-medium text-ink-900">{item.title}</h3>
               {item.description ? (
-                <p className="mt-1 text-center text-sm text-ink-700">{item.description}</p>
+                <p className="mt-2 text-center text-sm text-ink-700">{item.description}</p>
               ) : null}
             </div>
           );
