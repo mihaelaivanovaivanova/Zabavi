@@ -107,7 +107,7 @@ export function WhoItsFor() {
                   className={
                     audience.imageClassName ??
                     (isRight
-                      ? "absolute -right-2 top-1/2 mt-10 w-24 -translate-y-1/2 object-contain sm:mt-0 sm:-right-12 sm:w-20 lg:-right-10 lg:w-24"
+                      ? "absolute -right-2 top-1/2 mt-10 w-24 -translate-y-1/2 object-contain sm:mt-0 sm:-right-12 sm:w-20 lg:-right-6 lg:w-24"
                       : "absolute -left-4 top-1/2 w-28 -mt-44 -translate-y-1/2 object-contain sm:-left-16 sm:-mt-16 sm:w-24 lg:-left-18 lg:w-32")
                   }
                 />
