@@ -43,9 +43,6 @@ export function Testimonials() {
         <div className="mt-4 flex justify-center">
           <StarRating value={product.rating} count={reviews.length} starClassName="h-7 w-7" />
         </div>
-        <Button type="button" variant="secondary" className="mt-4" onClick={() => setIsWizardOpen(true)}>
-          Остави отзив
-        </Button>
       </div>
 
       {visible.length > 0 ? (
@@ -98,6 +95,12 @@ export function Testimonials() {
           </button>
         </div>
       ) : null}
+
+      <div className="mt-8 flex justify-center">
+        <Button type="button" variant="secondary" className="px-14" onClick={() => setIsWizardOpen(true)}>
+          Остави отзив
+        </Button>
+      </div>
 
       <ReviewWizardModal isOpen={isWizardOpen} onClose={() => setIsWizardOpen(false)} />
     </Section>
