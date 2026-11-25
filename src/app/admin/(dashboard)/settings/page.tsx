@@ -4,10 +4,12 @@ import { getICardSettingsForAdmin } from "@/infrastructure/settings/icardSetting
 import { getBoxNowSettingsForAdmin } from "@/infrastructure/settings/boxNowSettingsService";
 import { getSpeedySettingsForAdmin } from "@/infrastructure/settings/speedySettingsService";
 import { getIllustrationsSectionContentForAdmin } from "@/infrastructure/content/illustrationsSectionService";
+import { getFaqContentForAdmin } from "@/infrastructure/content/faqService";
 import { ICardSettingsForm } from "@/components/admin/ICardSettingsForm";
 import { BoxNowSettingsForm } from "@/components/admin/BoxNowSettingsForm";
 import { SpeedySettingsForm } from "@/components/admin/SpeedySettingsForm";
 import { IllustrationsSectionForm } from "@/components/admin/IllustrationsSectionForm";
+import { FaqSectionForm } from "@/components/admin/FaqSectionForm";
 
 export default function AdminSettingsPage() {
   return (
@@ -30,11 +32,12 @@ async function SettingsSections() {
   // Same reasoning as the orders/kits admin pages: these reads have no
   // request-time signal of their own, so opt out of the static shell.
   await connection();
-  const [icard, boxNow, speedy, illustrationsSection] = await Promise.all([
+  const [icard, boxNow, speedy, illustrationsSection, faq] = await Promise.all([
     getICardSettingsForAdmin(),
     getBoxNowSettingsForAdmin(),
     getSpeedySettingsForAdmin(),
     getIllustrationsSectionContentForAdmin(),
+    getFaqContentForAdmin(),
   ]);
 
   const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
@@ -42,6 +45,7 @@ async function SettingsSections() {
   return (
     <div className="mt-8 space-y-8">
       <IllustrationsSectionForm initial={illustrationsSection} />
+      <FaqSectionForm initial={faq} />
       <ICardSettingsForm initial={icard} />
       <BoxNowSettingsForm initial={boxNow} />
       <SpeedySettingsForm initial={speedy} />

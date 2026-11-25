@@ -1,5 +1,5 @@
 /** Despite the name, also covers non-integration site copy (e.g. "illustrations_section") — it's really just a generic settings key. */
-export type IntegrationProvider = "icard" | "box_now" | "speedy" | "illustrations_section";
+export type IntegrationProvider = "icard" | "box_now" | "speedy" | "illustrations_section" | "faq";
 
 export interface SettingsRepository {
   get(provider: IntegrationProvider): Promise<Record<string, unknown> | null>;

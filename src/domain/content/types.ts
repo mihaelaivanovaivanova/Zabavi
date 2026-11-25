@@ -1,4 +1,4 @@
-import { product } from "@/config/site";
+import { faq, product } from "@/config/site";
 
 /**
  * Admin-configurable copy for the "Четирите илюстрации" landing section's
@@ -28,4 +28,29 @@ export function normalizeIllustrationsSectionContent(
 ): IllustrationsSectionContent {
   if (!content) return defaultIllustrationsSectionContent();
   return { heading: content.heading, intro: content.intro };
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+/**
+ * Admin-configurable "Често задавани въпроси" list — set through
+ * /admin/settings. Same always-pre-filled convention as
+ * `IllustrationsSectionContent`: whatever is saved (including an empty
+ * list) is the value to show, seeded from `faq` in `src/config/site.ts` on
+ * first load.
+ */
+export interface FaqContent {
+  items: FaqItem[];
+}
+
+export function defaultFaqContent(): FaqContent {
+  return { items: faq.map((item) => ({ question: item.question, answer: item.answer })) };
+}
+
+export function normalizeFaqContent(content: FaqContent | null): FaqContent {
+  if (!content) return defaultFaqContent();
+  return { items: content.items.map((item) => ({ question: item.question, answer: item.answer })) };
 }
