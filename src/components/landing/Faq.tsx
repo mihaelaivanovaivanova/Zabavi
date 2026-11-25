@@ -7,7 +7,7 @@ export function Faq() {
   const { content } = useFaqContent();
 
   return (
-    <Section tone="paper">
+    <Section tone="lavender">
       <h2 className="text-center text-3xl font-semibold text-ink-900">Често задавани въпроси</h2>
       <dl className="mx-auto mt-10 max-w-2xl divide-y divide-lavender-200">
         {content.items.map((item) => (
