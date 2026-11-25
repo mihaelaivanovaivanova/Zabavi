@@ -30,6 +30,7 @@ const kitUpdateSchema = z.object({
   boxContentsVideoUrl: z.string().min(1).nullable(),
   boxContentsVideoThumbnail: kitImageSchema.nullable(),
   boxContents: z.array(z.string().trim().min(1)),
+  boxContentsExtra: z.array(z.string().trim().min(1)),
 });
 
 /** Gated by proxy.ts — only reachable with a valid admin session cookie. */
@@ -73,6 +74,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ vari
     boxContentsVideoUrl: parsed.data.boxContentsVideoUrl,
     boxContentsVideoThumbnail: parsed.data.boxContentsVideoThumbnail,
     boxContents: parsed.data.boxContents,
+    boxContentsExtra: parsed.data.boxContentsExtra,
     updatedAt: new Date().toISOString(),
   });
 

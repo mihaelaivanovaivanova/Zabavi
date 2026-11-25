@@ -10,6 +10,7 @@ function mockKitsResponse(
     boxContentsVideoUrl?: string | null;
     boxContentsVideoThumbnail?: { url: string; alt: string } | null;
     boxContents?: string[] | null;
+    boxContentsExtra?: string[] | null;
   }>,
 ) {
   vi.stubGlobal(
@@ -26,6 +27,7 @@ function mockKitsResponse(
             boxContentsVideoUrl: k.boxContentsVideoUrl ?? null,
             boxContentsVideoThumbnail: k.boxContentsVideoThumbnail ?? null,
             boxContents: k.boxContents ?? null,
+            boxContentsExtra: k.boxContentsExtra ?? null,
             updatedAt: new Date(0).toISOString(),
           })),
         }),
@@ -115,5 +117,30 @@ describe("WhatsInTheBox", () => {
     );
 
     await waitFor(() => expect(screen.getByText(product.boxContents[0])).toBeInTheDocument());
+  });
+
+  it("hides the 'Получавате още' section when the kit has no extra items", async () => {
+    mockKitsResponse([{ variantId }]);
+    render(
+      <SelectedVariantProvider defaultVariantId={variantId}>
+        <WhatsInTheBox />
+      </SelectedVariantProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText(product.boxContents[0])).toBeInTheDocument());
+    expect(screen.queryByText("Получавате още:")).not.toBeInTheDocument();
+  });
+
+  it("renders the kit's 'Получавате още' extra items when set", async () => {
+    mockKitsResponse([{ variantId, boxContentsExtra: ["Достъп до видео инструкции", "Подаръчна картичка"] }]);
+    render(
+      <SelectedVariantProvider defaultVariantId={variantId}>
+        <WhatsInTheBox />
+      </SelectedVariantProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText("Получавате още:")).toBeInTheDocument());
+    expect(screen.getByText("Достъп до видео инструкции")).toBeInTheDocument();
+    expect(screen.getByText("Подаръчна картичка")).toBeInTheDocument();
   });
 });

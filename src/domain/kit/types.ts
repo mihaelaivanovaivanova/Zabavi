@@ -62,6 +62,13 @@ export interface KitDetails {
    * to `product.boxContents`, same as `contents`/`bonus`.
    */
   boxContents: string[] | null;
+  /**
+   * Per-kit "Получавате още:" bullet list shown under the box-contents list.
+   * Unlike `boxContents`, there is no site-wide seed value for this — it's
+   * new content, not an existing list being made per-kit — so `null`/`[]`
+   * both just hide the section instead of falling back to anything.
+   */
+  boxContentsExtra: string[] | null;
   updatedAt: string;
 }
 
@@ -82,6 +89,7 @@ export function defaultKitDetails(variantId: string): KitDetails {
     boxContentsVideoUrl: null,
     boxContentsVideoThumbnail: null,
     boxContents: null,
+    boxContentsExtra: null,
     updatedAt: new Date(0).toISOString(),
   };
 }

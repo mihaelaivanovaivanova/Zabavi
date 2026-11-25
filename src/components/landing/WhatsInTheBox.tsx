@@ -13,6 +13,7 @@ export function WhatsInTheBox() {
   const videoUrl = kit?.boxContentsVideoUrl;
   const thumbnailUrl = kit?.boxContentsVideoThumbnail?.url;
   const boxContents = kit?.boxContents ?? product.boxContents;
+  const boxContentsExtra = kit?.boxContentsExtra ?? [];
 
   return (
     <Section id="whats-inside" tone="lavender">
@@ -43,6 +44,20 @@ export function WhatsInTheBox() {
               </li>
             ))}
           </ul>
+
+          {boxContentsExtra.length > 0 ? (
+            <div className="mt-6">
+              <p className="text-sm font-semibold text-ink-900">Получавате още:</p>
+              <ul className="mt-2 space-y-2">
+                {boxContentsExtra.map((item) => (
+                  <li key={item} className="flex gap-3 text-ink-800">
+                    <span aria-hidden className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-500" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
     </Section>

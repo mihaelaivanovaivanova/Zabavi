@@ -185,6 +185,7 @@ export function KitEditForm({
   const [contents, setContents] = useState<string[]>(initialKit.contents ?? variant.contents ?? []);
   const [bonus, setBonus] = useState<string[]>(initialKit.bonus ?? variant.bonus ?? []);
   const [boxContents, setBoxContents] = useState<string[]>(initialKit.boxContents ?? product.boxContents);
+  const [boxContentsExtra, setBoxContentsExtra] = useState<string[]>(initialKit.boxContentsExtra ?? []);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
@@ -344,6 +345,7 @@ export function KitEditForm({
         boxContentsVideoUrl,
         boxContentsVideoThumbnail,
         boxContents: boxContents.map((item) => item.trim()).filter((item) => item !== ""),
+        boxContentsExtra: boxContentsExtra.map((item) => item.trim()).filter((item) => item !== ""),
       }),
     });
     const data = await response.json();
@@ -724,6 +726,15 @@ export function KitEditForm({
         onChange={setBoxContents}
         addLabel="+ Добави елемент"
         placeholder="напр. Четка за рисуване"
+      />
+
+      <ListEditor
+        label="Получавате още"
+        helperText="Незадължително — показва се под списъка по-горе. Остави празно, за да няма такъв списък."
+        items={boxContentsExtra}
+        onChange={setBoxContentsExtra}
+        addLabel="+ Добави елемент"
+        placeholder="напр. Достъп до видео инструкции"
       />
 
       {saveState.status === "error" ? (
