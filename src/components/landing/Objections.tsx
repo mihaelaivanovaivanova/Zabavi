@@ -1,33 +1,11 @@
-import { Section } from "@/components/ui/Section";
+"use client";
 
-const objections = [
-  {
-    question: "…не мога да рисувам?",
-    answer:
-      "Можеш да започнеш и без предишен опит. Скиците ти дават основата, а видео уроците показват вариант за рисуване и техники, които да опиташ.",
-  },
-  {
-    question: "…объркам нещо?",
-    answer:
-      "Не всяка непланирана следа трябва да се поправя. Понякога можеш да я включиш в картината, да промениш посоката или просто да опиташ различно следващия път. Тук няма оценяване.",
-  },
-  {
-    question: "…нямам много свободно време?",
-    answer: "Не е нужно да рисуваш всичко наведнъж. Можеш да разделиш работата на части и да продължиш в друг ден.",
-  },
-  {
-    question: "…искам да науча техники, а не само да оцветявам?",
-    answer:
-      "Във видео уроците има техники, които да приложиш върху скиците. Можеш да се упражняваш и да използваш наученото и в следващи собствени рисунки.",
-  },
-  {
-    question: "…не искам да следвам урока?",
-    answer:
-      "Можеш да използваш само отделни насоки или да рисуваш изцяло по свой начин. Изборът на цветове и крайният вид на картината са твои.",
-  },
-];
+import { Section } from "@/components/ui/Section";
+import { useObjectionsContent } from "@/lib/useObjectionsContent";
 
 export function Objections() {
+  const { content } = useObjectionsContent();
+
   return (
     <Section tone="burgundy">
       <div className="relative mx-auto max-w-2xl">
@@ -48,7 +26,7 @@ export function Objections() {
 
         <h2 className="text-center text-3xl font-semibold text-paper-50">Ами ако…</h2>
         <div className="mt-10 space-y-3">
-          {objections.map((item) => (
+          {content.items.map((item) => (
             <div key={item.question} className="space-y-1">
               <div className="flex justify-start">
                 <div className="relative max-w-[85%] px-5 py-4 sm:max-w-[70%]">

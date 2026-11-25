@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { faq, product } from "@/config/site";
+import { faq, objections, product } from "@/config/site";
 import {
   defaultFaqContent,
   defaultIllustrationsSectionContent,
+  defaultObjectionsContent,
   normalizeFaqContent,
   normalizeIllustrationsSectionContent,
+  normalizeObjectionsContent,
 } from "@/domain/content/types";
 
 describe("defaultIllustrationsSectionContent", () => {
@@ -43,5 +45,24 @@ describe("normalizeFaqContent", () => {
 
     const stored = { items: [{ question: "Нов въпрос?", answer: "Нов отговор." }] };
     expect(normalizeFaqContent(stored)).toEqual(stored);
+  });
+});
+
+describe("defaultObjectionsContent", () => {
+  it("seeds items from the site config", () => {
+    expect(defaultObjectionsContent()).toEqual({ items: objections });
+  });
+});
+
+describe("normalizeObjectionsContent", () => {
+  it("falls back to the config default when nothing is stored", () => {
+    expect(normalizeObjectionsContent(null)).toEqual(defaultObjectionsContent());
+  });
+
+  it("keeps the admin-saved items as-is, including an explicitly empty list", () => {
+    expect(normalizeObjectionsContent({ items: [] })).toEqual({ items: [] });
+
+    const stored = { items: [{ question: "…ново възражение?", answer: "Нов отговор." }] };
+    expect(normalizeObjectionsContent(stored)).toEqual(stored);
   });
 });

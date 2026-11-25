@@ -1,4 +1,4 @@
-import { faq, product } from "@/config/site";
+import { faq, objections, product } from "@/config/site";
 
 /**
  * Admin-configurable copy for the "Четирите илюстрации" landing section's
@@ -52,5 +52,23 @@ export function defaultFaqContent(): FaqContent {
 
 export function normalizeFaqContent(content: FaqContent | null): FaqContent {
   if (!content) return defaultFaqContent();
+  return { items: content.items.map((item) => ({ question: item.question, answer: item.answer })) };
+}
+
+/**
+ * Admin-configurable "Ами ако…" objections list — set through
+ * /admin/settings. Same convention as `FaqContent`, seeded from
+ * `objections` in `src/config/site.ts` on first load.
+ */
+export interface ObjectionsContent {
+  items: FaqItem[];
+}
+
+export function defaultObjectionsContent(): ObjectionsContent {
+  return { items: objections.map((item) => ({ question: item.question, answer: item.answer })) };
+}
+
+export function normalizeObjectionsContent(content: ObjectionsContent | null): ObjectionsContent {
+  if (!content) return defaultObjectionsContent();
   return { items: content.items.map((item) => ({ question: item.question, answer: item.answer })) };
 }
