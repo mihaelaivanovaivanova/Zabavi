@@ -35,7 +35,7 @@ const audiences = [
     image: "/images/illustrations/scroll-break-bench.webp",
     imageSide: "right" as const,
     imageClassName:
-      "absolute -right-4 top-1/2 mt-10 w-32 -translate-y-1/2 object-contain sm:mt-24 sm:-right-14 sm:w-40 lg:-right-16 lg:mt-28 lg:w-48",
+      "absolute -right-4 top-1/2 mt-10 w-32 -translate-y-1/2 object-contain sm:mt-24 sm:-right-14 sm:w-40 lg:-right-20 lg:mt-28 lg:w-48",
     paragraphs: [
       "Нещо, което да държиш в ръцете си. Да смесваш, да пробваш и да виждаш как се променя пред очите ти.",
       "Видео урокът ти показва как да започнеш. После можеш да го спреш и да останеш с четката, водата и цветовете.",
