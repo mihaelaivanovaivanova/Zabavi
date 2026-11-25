@@ -24,7 +24,7 @@ const audiences = [
     heading: "За теб, ако денят ти е пълен с грижа за другите",
     image: "/images/illustrations/caretaker-tired.webp",
     imageClassName:
-      "absolute -left-4 top-1/2 w-28 -mt-44 -translate-y-1/2 object-contain sm:-left-10 sm:-mt-32 sm:w-36 lg:-left-12 lg:-mt-36 lg:w-48",
+      "absolute -left-4 top-1/2 w-28 -mt-44 -translate-y-1/2 object-contain sm:-left-10 sm:-mt-32 sm:w-36 lg:-left-16 lg:-mt-36 lg:w-48",
     paragraphs: [
       "За майката, която иска малко време за себе си. За човека, към когото винаги има още една молба. За онзи, който вечер осъзнава, че отново е оставил собствените си желания накрая.",
       "Не е нужно да завършиш цяла картина наведнъж. Можеш да започнеш и да се върнеш към нея, когато имаш възможност.",
