@@ -13,6 +13,8 @@ export function PaymentBadges() {
         {/* eslint-disable-next-line @next/next/no-img-element -- static brand SVG, rendered as a crisp vector, not an optimized raster */}
         <img src="/icons/payments/mastercard.svg" alt="Mastercard" className="h-6 w-auto" />
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- static brand SVG, rendered as a crisp vector, not an optimized raster */}
+      <img src="/icons/payments/amex.svg" alt="American Express" className="h-10 w-auto rounded-lg" />
     </div>
   );
 }
