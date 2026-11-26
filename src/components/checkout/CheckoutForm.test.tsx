@@ -7,13 +7,26 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
 }));
 
-function mockFetchForKitsAndCheckout(checkoutResponse: unknown) {
+const DEFAULT_PRICING = { shippingPrices: { box_now: 0, courier: 0, speedy_office: 0, speedy_locker: 0 }, codFeeEur: 0.5 };
+const DEFAULT_LOCKERS = [{ id: "LOCKER-1721", city: "София", addressLine1: "бул. Тест 1", postalCode: "1000", name: "Тест локер" }];
+const DEFAULT_SETTLEMENTS = [{ id: "1", type: "гр.", name: "Варна", municipality: "Варна", region: "Варна", postalCode: "9000" }];
+
+function mockFetchForCheckout(checkoutResponse: unknown) {
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url.includes("/api/kits")) {
         return Promise.resolve(new Response(JSON.stringify({ kits: [] }), { status: 200 }));
+      }
+      if (url.includes("/api/checkout/pricing")) {
+        return Promise.resolve(new Response(JSON.stringify(DEFAULT_PRICING), { status: 200 }));
+      }
+      if (url.includes("/api/box-now/lockers")) {
+        return Promise.resolve(new Response(JSON.stringify({ lockers: DEFAULT_LOCKERS }), { status: 200 }));
+      }
+      if (url.includes("/api/content/settlements")) {
+        return Promise.resolve(new Response(JSON.stringify({ settlements: DEFAULT_SETTLEMENTS }), { status: 200 }));
       }
       if (url.includes("/api/checkout")) {
         return Promise.resolve(new Response(JSON.stringify(checkoutResponse), { status: 200 }));
@@ -23,12 +36,42 @@ function mockFetchForKitsAndCheckout(checkoutResponse: unknown) {
   );
 }
 
-function fillRequiredFields() {
-  fireEvent.input(screen.getByLabelText("Име и фамилия"), { target: { value: "Иван Иванов" } });
+function fillStep1() {
+  fireEvent.input(screen.getByLabelText("Име"), { target: { value: "Иван" } });
+  fireEvent.input(screen.getByLabelText("Фамилия"), { target: { value: "Иванов" } });
   fireEvent.input(screen.getByLabelText("Телефон"), { target: { value: "0888123456" } });
+  fireEvent.input(screen.getByLabelText("Имейл"), { target: { value: "ivan@example.com" } });
+}
+
+// Each picker's <select> is a sibling of its own search input within the
+// same wrapper div, so scoping to that wrapper avoids grabbing the other
+// picker's <select> when more than one is mounted at once.
+async function selectFromSiblingDropdown(searchInput: HTMLElement, value: string) {
+  const wrapper = searchInput.closest("div");
+  if (!wrapper) throw new Error("search input has no wrapper div");
+  const select = await waitFor(() => {
+    const element = wrapper.querySelector("select");
+    if (!element) throw new Error("<select> not rendered yet");
+    return element;
+  });
+  fireEvent.change(select, { target: { value } });
+}
+
+async function selectBoxNowLocker() {
+  const searchInput = screen.getByPlaceholderText("Търси по град, адрес или пощенски код…");
+  fireEvent.input(searchInput, { target: { value: "София" } });
+  await selectFromSiblingDropdown(searchInput, "LOCKER-1721");
+}
+
+// box_now only ever pairs with card_icard (the other payment method, cash on
+// delivery, is blocked for BOX NOW) — and card_icard always requires a
+// billing address regardless of delivery method, so this fills that in too.
+async function fillBoxNowBillingAddress() {
   fireEvent.input(screen.getByLabelText("Адрес"), { target: { value: "ул. Примерна 1" } });
-  fireEvent.input(screen.getByLabelText("Град"), { target: { value: "София" } });
-  fireEvent.input(screen.getByLabelText("Пощенски код"), { target: { value: "1000" } });
+  const citySearchInput = screen.getByLabelText("Населено място");
+  fireEvent.input(citySearchInput, { target: { value: "Варна" } });
+  await selectFromSiblingDropdown(citySearchInput, "1");
+  fireEvent.input(screen.getByLabelText("Пощенски код"), { target: { value: "9000" } });
 }
 
 beforeEach(() => {
@@ -42,7 +85,7 @@ afterEach(() => {
 describe("CheckoutForm — cart integration", () => {
   it("prefills the variant and quantity from the cart instead of defaulting to the first variant and qty 1", async () => {
     window.localStorage.setItem("zabavi-cart", JSON.stringify({ variantId: "calm-moments", quantity: 3 }));
-    mockFetchForKitsAndCheckout({ success: true });
+    mockFetchForCheckout({ success: true });
 
     render(
       <CartProvider>
@@ -55,7 +98,7 @@ describe("CheckoutForm — cart integration", () => {
   });
 
   it("defaults to the first variant and qty 1 when the cart is empty", async () => {
-    mockFetchForKitsAndCheckout({ success: true });
+    mockFetchForCheckout({ success: true });
 
     render(
       <CartProvider>
@@ -66,14 +109,16 @@ describe("CheckoutForm — cart integration", () => {
     await waitFor(() => expect(screen.getByRole("radio", { name: "Магията на Коледа" })).toBeChecked());
     expect(screen.getByLabelText("Брой кутии")).toHaveValue(1);
   });
+});
 
-  it("clears the cart once the demo order is submitted successfully", async () => {
+describe("CheckoutForm — wizard", () => {
+  it("walks through all 4 steps and clears the cart once the order is submitted successfully", async () => {
     window.localStorage.setItem("zabavi-cart", JSON.stringify({ variantId: "christmas-magic", quantity: 1 }));
-    mockFetchForKitsAndCheckout({
+    mockFetchForCheckout({
       success: true,
       orderId: "order-123",
-      paymentNotice: "Демо плащане.",
-      shippingNotice: "Демо доставка.",
+      paymentNotice: "Плащане в брой при доставка.",
+      shippingNotice: "Пратката е заявена.",
       paymentIsLive: false,
       shippingIsLive: false,
     });
@@ -85,16 +130,40 @@ describe("CheckoutForm — cart integration", () => {
     );
 
     await waitFor(() => expect(window.localStorage.getItem("zabavi-cart")).not.toBeNull());
-    fillRequiredFields();
-    fireEvent.click(screen.getByRole("button", { name: "Завърши поръчката (демо)" }));
+    fillStep1();
 
-    await waitFor(() => expect(screen.getByText("Демонстрацията е завършена")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Напред" }));
+    await waitFor(() => expect(screen.getByText("Автомат BOX NOW")).toBeInTheDocument());
+    await selectBoxNowLocker();
+    await fillBoxNowBillingAddress();
+
+    fireEvent.click(screen.getByRole("button", { name: "Напред" }));
+    await waitFor(() => expect(screen.getByText("Преглед на поръчката")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: "Завърши поръчката" }));
+
+    await waitFor(() => expect(screen.getByText("Поръчката е получена")).toBeInTheDocument());
     expect(window.localStorage.getItem("zabavi-cart")).toBeNull();
   });
 
-  it("keeps the cart untouched when the order submission fails", async () => {
+  it("does not advance past step 1 when required fields are missing", async () => {
+    mockFetchForCheckout({ success: true });
+
+    render(
+      <CartProvider>
+        <CheckoutForm />
+      </CartProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Напред" }));
+
+    await waitFor(() => expect(screen.getByText("Въведи име.")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Данни за поръчката" })).toBeInTheDocument();
+  });
+
+  it("keeps the cart untouched and shows an error when the order submission fails", async () => {
     window.localStorage.setItem("zabavi-cart", JSON.stringify({ variantId: "christmas-magic", quantity: 1 }));
-    mockFetchForKitsAndCheckout({ success: false });
+    mockFetchForCheckout({ success: false });
 
     render(
       <CartProvider>
@@ -103,8 +172,17 @@ describe("CheckoutForm — cart integration", () => {
     );
 
     await waitFor(() => expect(window.localStorage.getItem("zabavi-cart")).not.toBeNull());
-    fillRequiredFields();
-    fireEvent.click(screen.getByRole("button", { name: "Завърши поръчката (демо)" }));
+    fillStep1();
+
+    fireEvent.click(screen.getByRole("button", { name: "Напред" }));
+    await waitFor(() => expect(screen.getByText("Автомат BOX NOW")).toBeInTheDocument());
+    await selectBoxNowLocker();
+    await fillBoxNowBillingAddress();
+
+    fireEvent.click(screen.getByRole("button", { name: "Напред" }));
+    await waitFor(() => expect(screen.getByText("Преглед на поръчката")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: "Завърши поръчката" }));
 
     await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
     expect(window.localStorage.getItem("zabavi-cart")).not.toBeNull();

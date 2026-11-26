@@ -236,13 +236,15 @@ function nextPickupDate(): string {
   return `${year}-${month}-${day}`;
 }
 
+export type CreateSpeedyShipmentDestination =
+  | { type: "address"; address: string; city: string; postalCode: string }
+  | { type: "office"; officeId: string };
+
 export interface CreateSpeedyShipmentInput {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
-  address: string;
-  city: string;
-  postalCode: string;
+  destination: CreateSpeedyShipmentDestination;
   paymentMethod: "prepaid" | "cod";
   /** Only meaningful when `paymentMethod` is "cod". */
   amountToCollectEur: number;
@@ -250,6 +252,21 @@ export interface CreateSpeedyShipmentInput {
 
 export interface CreateSpeedyShipmentResult {
   trackingNumber: string;
+}
+
+function addressFieldsFor(destination: Extract<CreateSpeedyShipmentDestination, { type: "address" }>) {
+  const components = parseAddressComponents(destination.address);
+  return {
+    siteName: destination.city,
+    postCode: destination.postalCode,
+    streetName: components.streetName,
+    streetNo: components.streetNo,
+    ...(components.complexName ? { complexName: components.complexName } : {}),
+    ...(components.blockNo ? { blockNo: components.blockNo } : {}),
+    ...(components.entranceNo ? { entranceNo: components.entranceNo } : {}),
+    ...(components.floorNo ? { floorNo: components.floorNo } : {}),
+    ...(components.apartmentNo ? { apartmentNo: components.apartmentNo } : {}),
+  };
 }
 
 export async function createSpeedyShipment(
@@ -261,7 +278,6 @@ export async function createSpeedyShipment(
   }
 
   const ownClient = await getOwnClient(config);
-  const address = parseAddressComponents(input.address);
 
   const service: Record<string, unknown> = {
     serviceId: Number(config.serviceId),
@@ -301,6 +317,14 @@ export async function createSpeedyShipment(
     };
   }
 
+  // Office/APT and address recipients are mutually exclusive per Speedy's
+  // real API — pickupOfficeId is the same field for both a staffed office
+  // and an automated machine (see offices() in this file).
+  const recipientDestination =
+    input.destination.type === "office"
+      ? { pickupOfficeId: Number(input.destination.officeId) }
+      : { address: addressFieldsFor(input.destination) };
+
   const response = await postJson(config, "shipment", {
     sender: {
       dropoff: true,
@@ -312,17 +336,7 @@ export async function createSpeedyShipment(
       clientName: input.customerName,
       privatePerson: true,
       phone1: { number: input.customerPhone },
-      address: {
-        siteName: input.city,
-        postCode: input.postalCode,
-        streetName: address.streetName,
-        streetNo: address.streetNo,
-        ...(address.complexName ? { complexName: address.complexName } : {}),
-        ...(address.blockNo ? { blockNo: address.blockNo } : {}),
-        ...(address.entranceNo ? { entranceNo: address.entranceNo } : {}),
-        ...(address.floorNo ? { floorNo: address.floorNo } : {}),
-        ...(address.apartmentNo ? { apartmentNo: address.apartmentNo } : {}),
-      },
+      ...recipientDestination,
     },
     service,
     content: { parcelsCount: 1, totalWeight: 1.0, contents: "Merchandise", package: "BOX" },
@@ -476,4 +490,128 @@ export async function cancelSpeedyShipment(trackingNumber: string, reason?: stri
   const comment = (reason ?? "").trim().length >= 4 ? (reason ?? "").trim() : "Отказана от администратор";
 
   await postJson(config, "shipment/cancel", { shipmentId: trackingNumber, comment });
+}
+
+export interface SpeedyOffice {
+  id: string;
+  type: "office" | "locker";
+  name: string;
+  city: string;
+  address: string;
+}
+
+/**
+ * `POST location/office` — staffed offices and APT machines come back in
+ * one flat list, distinguished only by the office's own `type` field
+ * ("APT" → an automated machine, ported from smisul.bg's `offices()`).
+ */
+export async function searchSpeedyOffices(city?: string): Promise<SpeedyOffice[]> {
+  const config = await readConfig();
+  if (!config) {
+    throw new ShippingProviderError("Speedy API credentials are not configured.");
+  }
+
+  const response = await postJson(config, "location/office", city ? { siteName: city } : {});
+  const offices = response.offices as
+    | { id: string | number; type?: string; name: string; address?: { siteName?: string; fullAddressString?: string } }[]
+    | undefined;
+
+  return (offices ?? []).map((office) => ({
+    id: String(office.id),
+    type: office.type === "APT" ? "locker" : "office",
+    name: office.name,
+    city: office.address?.siteName ?? city ?? "",
+    address: office.address?.fullAddressString ?? "",
+  }));
+}
+
+export interface SpeedySettlement {
+  id: string;
+  /** Speedy's own type prefix, e.g. "гр." or "с." — already display-ready. */
+  type: string;
+  name: string;
+  municipality: string;
+  region: string;
+  postalCode: string;
+}
+
+/** A single CSV line → fields, handling quoted values (which may contain commas) — JS has no `str_getcsv` built in. */
+function parseCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += char;
+      }
+    } else if (char === '"') {
+      inQuotes = true;
+    } else if (char === ",") {
+      values.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  values.push(current);
+  return values;
+}
+
+function parseSpeedySettlementsCsv(body: string): SpeedySettlement[] {
+  const lines = body.split(/\r\n|\r|\n/).filter((line) => line.trim() !== "");
+  if (lines.length === 0) return [];
+
+  const header = parseCsvLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    const row: Record<string, string> = {};
+    header.forEach((key, index) => {
+      row[key] = values[index] ?? "";
+    });
+    return {
+      id: row.id ?? "",
+      type: row.type ?? "",
+      name: row.name ?? "",
+      municipality: row.municipality ?? "",
+      region: row.region ?? "",
+      postalCode: row.postCode ?? "",
+    };
+  });
+}
+
+/**
+ * `POST location/site/csv/100` — Bulgaria's full settlement nomenclature
+ * (~5,300 towns/cities/villages), ported from smisul.bg's
+ * `BulgarianSettlementService`. Returns raw CSV text, not JSON — the only
+ * Speedy endpoint that does. Callers should cache this (see
+ * `settlementsService.ts`): it's a ~700KB response and effectively static.
+ */
+export async function fetchSpeedySettlements(): Promise<SpeedySettlement[]> {
+  const config = await readConfig();
+  if (!config) {
+    throw new ShippingProviderError("Speedy API credentials are not configured.");
+  }
+
+  const response = await fetch(`${config.apiUrl.replace(/\/+$/, "")}/location/site/csv/100`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(withCredentials(config, {})),
+  });
+
+  if (!response.ok) {
+    throw new ShippingProviderError(`Speedy location/site/csv failed: HTTP ${response.status}`);
+  }
+
+  const body = await response.text();
+  return body ? parseSpeedySettlementsCsv(body) : [];
 }

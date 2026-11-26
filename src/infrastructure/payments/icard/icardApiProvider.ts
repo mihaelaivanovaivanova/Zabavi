@@ -19,7 +19,10 @@ export class ICardApiProvider implements PaymentProvider {
   readonly method = "card_icard" as const;
 
   async createPayment(order: OrderDraft): Promise<PaymentAttemptResult> {
-    const totals = await calculateTotals(order.items);
+    const totals = await calculateTotals(order.items, {
+      paymentMethod: order.paymentMethod,
+      deliveryMethod: order.shippingDetails.method,
+    });
     if (!totals.isPriceConfirmed || totals.totalEur === null) {
       throw new PaymentProviderError(
         "Истинско плащане не може да бъде заявено без зададена истинска цена на продукта (priceEur е TBD).",

@@ -41,6 +41,8 @@ export interface Product {
   illustrations: Illustration[];
   /** Default heading/intro for the "Четирите илюстрации" section — overridden by `/admin/settings`, see `@/domain/content/types`. */
   illustrationsSection: { heading: string; intro: string };
+  /** Default heading/steps for the "Как протича рисуването" section — overridden by `/admin/settings`, see `@/domain/content/types`. */
+  howItWorksSection: { heading: string; steps: { title: string; description: string }[] };
   variants: ProductVariant[];
   /** Price/photos are per-kit now — see `src/domain/kit/types.ts` and /admin/kits, not a single product-wide value. */
   currency: "EUR";

@@ -58,6 +58,8 @@ export interface OrderDraft {
   /** Billing address, distinct from `shippingDetails` — required by iCard regardless of delivery method. */
   billingAddress?: { address: string; city: string; postalCode: string };
   shippingDetails: ShippingDetails;
+  /** Customer requested an invoice at checkout — shown in the admin dashboard; `sendOrderInvoiceEmail` still fires on every `delivered` order regardless, same as before this flag existed. */
+  wantsInvoice?: boolean;
   giftMessage?: string;
   items: CartLineItem[];
   paymentMethod: PaymentMethodId;

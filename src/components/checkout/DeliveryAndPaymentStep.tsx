@@ -1,0 +1,155 @@
+import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { Badge } from "@/components/ui/Badge";
+import { AddressFields } from "@/components/checkout/AddressFields";
+import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/BoxNowLockerPicker";
+import { SpeedyOfficePicker } from "@/components/checkout/SpeedyOfficePicker";
+import { deliveryMethods, paymentMethods } from "@/config/site";
+import type { CheckoutFormValues } from "@/lib/validation";
+
+export function DeliveryAndPaymentStep({
+  register,
+  errors,
+  watch,
+  setValue,
+  codFeeEur,
+}: {
+  register: UseFormRegister<CheckoutFormValues>;
+  errors: FieldErrors<CheckoutFormValues>;
+  watch: UseFormWatch<CheckoutFormValues>;
+  setValue: UseFormSetValue<CheckoutFormValues>;
+  codFeeEur: number;
+}) {
+  const deliveryMethod = watch("deliveryMethod");
+  const paymentMethod = watch("paymentMethod");
+  const boxNowLockerId = watch("boxNowLockerId");
+  const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
+  const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
+  const speedyOfficeId = watch("speedyOfficeId");
+  const speedyOfficeLabel = watch("speedyOfficeLabel");
+  const speedyOfficeCity = watch("speedyOfficeCity");
+
+  function handleLockerSelect(selection: BoxNowSelection) {
+    setValue("boxNowLockerId", selection.lockerId, { shouldValidate: true });
+    setValue("boxNowLockerAddressLine1", selection.addressLine1);
+    setValue("boxNowLockerPostalCode", selection.postalCode);
+  }
+
+  function handleSpeedyOfficeSelect(selection: { officeId: string; officeLabel: string; city: string }) {
+    setValue("speedyOfficeId", selection.officeId, { shouldValidate: true });
+    setValue("speedyOfficeLabel", selection.officeLabel);
+    setValue("speedyOfficeCity", selection.city);
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-ink-900">Начин на доставка</h2>
+        <fieldset className="flex flex-col gap-3">
+          <legend className="sr-only">Начин на доставка</legend>
+          {deliveryMethods.map((method) => (
+            <div
+              key={method.id}
+              className={`rounded-xl border px-4 py-3 ${
+                method.available ? "border-lavender-200 bg-paper-50" : "border-lavender-100 bg-paper-200/60"
+              }`}
+            >
+              <label className={`flex items-start gap-3 ${method.available ? "cursor-pointer" : "cursor-not-allowed text-ink-700/60"}`}>
+                <input
+                  type="radio"
+                  value={method.id}
+                  disabled={!method.available}
+                  className="mt-1"
+                  {...register("deliveryMethod")}
+                />
+                <span>
+                  <span className="block font-medium text-ink-900">
+                    {method.label}
+                    {!method.available ? " (очаквайте скоро)" : null}
+                  </span>
+                  <span className="block text-sm text-ink-700">{method.description}</span>
+                </span>
+              </label>
+
+              {deliveryMethod === method.id ? (
+                <div className="mt-4 border-t border-lavender-200 pt-4">
+                  {method.id === "box_now" ? (
+                    <BoxNowLockerPicker
+                      selected={
+                        boxNowLockerId
+                          ? {
+                              lockerId: boxNowLockerId,
+                              addressLine1: boxNowLockerAddressLine1 ?? "",
+                              postalCode: boxNowLockerPostalCode ?? "",
+                            }
+                          : null
+                      }
+                      onSelect={handleLockerSelect}
+                      error={errors.boxNowLockerId?.message}
+                    />
+                  ) : method.id === "speedy_office" || method.id === "speedy_locker" ? (
+                    <SpeedyOfficePicker
+                      type={method.id === "speedy_office" ? "office" : "locker"}
+                      selected={speedyOfficeId ? { officeId: speedyOfficeId, officeLabel: speedyOfficeLabel ?? "", city: speedyOfficeCity ?? "" } : null}
+                      onSelect={handleSpeedyOfficeSelect}
+                      error={errors.speedyOfficeId?.message}
+                    />
+                  ) : (
+                    <AddressFields register={register} errors={errors} watch={watch} setValue={setValue} />
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </fieldset>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-ink-900">Начин на плащане</h2>
+        <fieldset className="flex flex-col gap-3">
+          <legend className="sr-only">Начин на плащане</legend>
+          {paymentMethods.map((method) => {
+            const isCodUnavailable = method.id === "cash_on_delivery" && deliveryMethod === "box_now";
+            return (
+              <label
+                key={method.id}
+                className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+                  isCodUnavailable
+                    ? "border-lavender-100 bg-paper-200/60 text-ink-700/60 cursor-not-allowed"
+                    : "border-lavender-200 bg-paper-50 cursor-pointer"
+                }`}
+              >
+                <input type="radio" value={method.id} disabled={isCodUnavailable} className="mt-1" {...register("paymentMethod")} />
+                <span>
+                  <span className="flex items-center gap-2 font-medium text-ink-900">
+                    {method.label}
+                    {method.id === "cash_on_delivery" && codFeeEur > 0 ? <Badge tone="neutral">+{codFeeEur.toFixed(2)} €</Badge> : null}
+                  </span>
+                  <span className="block text-sm text-ink-700">
+                    {isCodUnavailable ? "Наложен платеж не е наличен за доставка с BOX NOW." : method.description}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+        {errors.paymentMethod?.message ? (
+          <p role="alert" className="text-sm text-burgundy-600">
+            {errors.paymentMethod.message}
+          </p>
+        ) : null}
+      </div>
+
+      {deliveryMethod === "box_now" && paymentMethod === "card_icard" ? (
+        <AddressFields register={register} errors={errors} watch={watch} setValue={setValue} title="Адрес за фактуриране" />
+      ) : null}
+
+      <label className="flex items-start gap-3 rounded-xl border border-lavender-200 bg-paper-50 px-4 py-3 cursor-pointer">
+        <input type="checkbox" className="mt-1" {...register("wantsInvoice")} />
+        <span>
+          <span className="block font-medium text-ink-900">Искам фактура</span>
+          <span className="block text-sm text-ink-700">Ще получиш фактура на имейла си след потвърждение на поръчката.</span>
+        </span>
+      </label>
+    </div>
+  );
+}

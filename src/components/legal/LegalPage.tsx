@@ -1,11 +1,13 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
+import { TopAnnouncementBar } from "@/components/landing/TopAnnouncementBar";
 import { Container } from "@/components/ui/Container";
 
 export function LegalPage({ title, version, children }: { title: string; version?: string; children: ReactNode }) {
   return (
     <>
+      <TopAnnouncementBar />
       <Header />
       <main className="bg-paper-100 py-16">
         <Container className="max-w-3xl">

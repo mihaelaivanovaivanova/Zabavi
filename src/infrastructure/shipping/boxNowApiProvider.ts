@@ -16,7 +16,10 @@ export class BoxNowApiProvider implements ShippingProvider {
       throw new ShippingProviderError("BoxNowApiProvider called with a non-BOX NOW shipping method.");
     }
 
-    const totals = await calculateTotals(order.items, { paymentMethod: order.paymentMethod });
+    const totals = await calculateTotals(order.items, {
+      paymentMethod: order.paymentMethod,
+      deliveryMethod: order.shippingDetails.method,
+    });
     if (!totals.isPriceConfirmed || totals.totalEur === null) {
       throw new ShippingProviderError(
         "Истинска BOX NOW пратка не може да бъде създадена без зададена истинска цена на продукта (priceEur е TBD).",

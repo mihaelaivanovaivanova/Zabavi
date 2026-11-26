@@ -1,5 +1,5 @@
 import type { OrderDraft } from "@/domain/order/types";
-import { ShippingProviderError } from "@/domain/shipping/types";
+import { ShippingProviderError, isSpeedyDeliveryMethod } from "@/domain/shipping/types";
 import { cancelSpeedyShipment, fetchSpeedyLabel } from "@/infrastructure/shipping/speedyApiClient";
 import { cancelBoxNowParcel, fetchBoxNowLabel } from "@/infrastructure/shipping/boxNowApiClient";
 
@@ -14,14 +14,14 @@ function requireTrackingNumber(order: OrderDraft): string {
 
 export async function fetchOrderShipmentLabel(order: OrderDraft): Promise<ArrayBuffer> {
   const trackingNumber = requireTrackingNumber(order);
-  return order.shippingDetails.method === "courier"
+  return isSpeedyDeliveryMethod(order.shippingDetails.method)
     ? fetchSpeedyLabel(trackingNumber)
     : fetchBoxNowLabel(trackingNumber);
 }
 
 export async function cancelOrderShipment(order: OrderDraft, reason?: string | null): Promise<void> {
   const trackingNumber = requireTrackingNumber(order);
-  if (order.shippingDetails.method === "courier") {
+  if (isSpeedyDeliveryMethod(order.shippingDetails.method)) {
     await cancelSpeedyShipment(trackingNumber, reason);
   } else {
     await cancelBoxNowParcel(trackingNumber, reason);

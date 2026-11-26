@@ -1,6 +1,6 @@
 import type { OrderDraft } from "@/domain/order/types";
 import { transitionOrderStatus } from "@/domain/order/orderStatusService";
-import { shipmentStatusLabel, type ShipmentStatus } from "@/domain/shipping/types";
+import { isSpeedyDeliveryMethod, shipmentStatusLabel, type ShipmentStatus } from "@/domain/shipping/types";
 import { trackSpeedyShipment } from "@/infrastructure/shipping/speedyApiClient";
 import { trackBoxNowParcel } from "@/infrastructure/shipping/boxNowApiClient";
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
@@ -43,7 +43,7 @@ interface TrackingResult {
 
 async function trackOrderShipment(order: OrderDraft): Promise<TrackingResult | null> {
   if (!order.trackingNumber) return null;
-  if (order.shippingDetails.method === "courier") {
+  if (isSpeedyDeliveryMethod(order.shippingDetails.method)) {
     return trackSpeedyShipment(order.trackingNumber);
   }
   return trackBoxNowParcel(order.trackingNumber);

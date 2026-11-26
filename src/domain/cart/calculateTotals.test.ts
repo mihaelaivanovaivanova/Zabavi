@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { calculateTotals } from "@/domain/cart/calculateTotals";
+import { saveShippingPrices } from "@/infrastructure/settings/shippingPricesService";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -53,5 +54,22 @@ describe("calculateTotals", () => {
       paymentMethod: "card_icard",
     });
     expect(card).toEqual({ subtotalEur: 25, shippingEur: 0, codFeeEur: 0, totalEur: 25, isPriceConfirmed: true });
+  });
+
+  it("looks up the admin-configured shipping price for the given delivery method", async () => {
+    await saveShippingPrices({ box_now: 2.5, courier: 0, speedy_office: 1.2, speedy_locker: 1.2 });
+    const lookup = () => 25;
+
+    const boxNow = await calculateTotals([{ productSlug: "test-product", variantId: "standard", quantity: 1 }], {
+      priceLookup: lookup,
+      deliveryMethod: "box_now",
+    });
+    expect(boxNow).toEqual({ subtotalEur: 25, shippingEur: 2.5, codFeeEur: 0, totalEur: 27.5, isPriceConfirmed: true });
+
+    const courier = await calculateTotals([{ productSlug: "test-product", variantId: "standard", quantity: 1 }], {
+      priceLookup: lookup,
+      deliveryMethod: "courier",
+    });
+    expect(courier.shippingEur).toBe(0);
   });
 });

@@ -19,11 +19,18 @@ function itemLabel(variantId: string): string {
   return product.variants.find((variant) => variant.id === variantId)?.label ?? variantId;
 }
 
-function shippingAddressLine(order: OrderDraft): string {
-  if (order.shippingDetails.method === "courier") {
-    return `${order.shippingDetails.address}, ${order.shippingDetails.city} ${order.shippingDetails.postalCode}`;
+export function shippingAddressLine(order: OrderDraft): string {
+  const details = order.shippingDetails;
+  switch (details.method) {
+    case "courier":
+      return `${details.address}, ${details.city} ${details.postalCode}`;
+    case "box_now":
+      return `BOX NOW автомат ${details.lockerId} — ${details.addressLine1} ${details.postalCode}`;
+    case "speedy_office":
+      return `Speedy офис — ${details.officeLabel}`;
+    case "speedy_locker":
+      return `Speedy автомат — ${details.officeLabel}`;
   }
-  return `BOX NOW автомат ${order.shippingDetails.lockerId} — ${order.shippingDetails.addressLine1} ${order.shippingDetails.postalCode}`;
 }
 
 function itemsListHtml(order: OrderDraft): string {

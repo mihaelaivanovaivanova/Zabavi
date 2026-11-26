@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getIllustrationsSectionContentForAdmin } from "@/infrastructure/content/illustrationsSectionService";
+import { getHowItWorksContentForAdmin } from "@/infrastructure/content/howItWorksService";
 import { getFaqContentForAdmin } from "@/infrastructure/content/faqService";
 import { getObjectionsContentForAdmin } from "@/infrastructure/content/objectionsService";
 import { IllustrationsSectionForm } from "@/components/admin/IllustrationsSectionForm";
+import { HowItWorksSectionForm } from "@/components/admin/HowItWorksSectionForm";
 import { FaqSectionForm } from "@/components/admin/FaqSectionForm";
 import { ObjectionsSectionForm } from "@/components/admin/ObjectionsSectionForm";
 import { SettingsNav } from "@/components/admin/SettingsNav";
@@ -31,8 +33,9 @@ async function ContentSettingsSections() {
   // Same reasoning as the orders/kits admin pages: these reads have no
   // request-time signal of their own, so opt out of the static shell.
   await connection();
-  const [illustrationsSection, faq, objections] = await Promise.all([
+  const [illustrationsSection, howItWorks, faq, objections] = await Promise.all([
     getIllustrationsSectionContentForAdmin(),
+    getHowItWorksContentForAdmin(),
     getFaqContentForAdmin(),
     getObjectionsContentForAdmin(),
   ]);
@@ -40,6 +43,7 @@ async function ContentSettingsSections() {
   return (
     <div className="mt-8 space-y-8">
       <IllustrationsSectionForm initial={illustrationsSection} />
+      <HowItWorksSectionForm initial={howItWorks} />
       <FaqSectionForm initial={faq} />
       <ObjectionsSectionForm initial={objections} />
     </div>

@@ -57,6 +57,12 @@
   --color-ink-700: #453f4c;
   --color-ink-800: #352f3c;
   --color-ink-900: #2b2630;
+
+  /* BOX NOW's own brand palette (Pantone 802C / 1C) — used as-is for the
+     top banner + floating badge, since these represent that real courier's
+     identity, not Zabavi's own. */
+  --color-boxnow-green: #44d62c;
+  --color-boxnow-cream: #efefe6;
 }
 
 body {
@@ -70,4 +76,62 @@ h2,
 h3,
 h4 {
   font-family: var(--font-serif);
+}
+
+/* ---- BOX NOW top announcement banner (TopAnnouncementBar.tsx) ---- */
+
+.top-announcement-bar__track {
+  animation: top-announcement-scroll 28s linear infinite;
+}
+
+@keyframes top-announcement-scroll {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top-announcement-bar__track {
+    animation: none;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .top-announcement-bar__track {
+    animation-direction: reverse;
+  }
+}
+
+/* ---- Floating BOX NOW badge (BoxNowBadge.tsx) ---- */
+
+.boxnow-badge {
+  animation: boxnow-badge-pulse 2.6s ease-in-out infinite;
+}
+
+.boxnow-badge:hover,
+.boxnow-badge:focus-visible {
+  animation-play-state: paused;
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boxnow-badge {
+    animation: none;
+  }
+}
+
+@keyframes boxnow-badge-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.045);
+  }
 }

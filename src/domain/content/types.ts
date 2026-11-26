@@ -30,6 +30,70 @@ export function normalizeIllustrationsSectionContent(
   return { heading: content.heading, intro: content.intro };
 }
 
+export interface HowItWorksStep {
+  title: string;
+  description: string;
+}
+
+/**
+ * Admin-configurable copy for the "Как протича рисуването" landing
+ * section's heading and numbered steps — set through /admin/settings. Same
+ * always-pre-filled convention as `IllustrationsSectionContent`: whatever is
+ * saved (including an empty step list) is the value to show, seeded from
+ * `product.howItWorksSection` on first load.
+ */
+export interface HowItWorksContent {
+  heading: string;
+  steps: HowItWorksStep[];
+}
+
+export function defaultHowItWorksContent(): HowItWorksContent {
+  return {
+    heading: product.howItWorksSection.heading,
+    steps: product.howItWorksSection.steps.map((step) => ({ ...step })),
+  };
+}
+
+export function normalizeHowItWorksContent(content: HowItWorksContent | null): HowItWorksContent {
+  if (!content) return defaultHowItWorksContent();
+  return { heading: content.heading, steps: content.steps };
+}
+
+/**
+ * Admin-configurable "BOX NOW marketing chrome" — the top announcement
+ * banner (every page) and the homepage's floating BOX NOW badge, ported
+ * from smisul.bg's `general.box_now_banner_enabled`/`box_now_badge_enabled`/
+ * `box_now_banner_message` settings. Deliberately separate from
+ * `BoxNowSettings` (API credentials) — "show this marketing copy" and
+ * "shipments are live" are different concerns; this is purely storefront
+ * chrome, shown even while BOX NOW itself still runs the demo stub.
+ */
+export interface BoxNowMarketingContent {
+  bannerEnabled: boolean;
+  badgeEnabled: boolean;
+  bannerMessage: string;
+}
+
+export function defaultBoxNowMarketingContent(): BoxNowMarketingContent {
+  return {
+    bannerEnabled: true,
+    badgeEnabled: true,
+    bannerMessage: "Безплатна доставка с BOX NOW",
+  };
+}
+
+export function normalizeBoxNowMarketingContent(
+  content: BoxNowMarketingContent | null,
+): BoxNowMarketingContent {
+  if (!content) return defaultBoxNowMarketingContent();
+  const defaults = defaultBoxNowMarketingContent();
+  return {
+    bannerEnabled: content.bannerEnabled ?? defaults.bannerEnabled,
+    badgeEnabled: content.badgeEnabled ?? defaults.badgeEnabled,
+    bannerMessage: content.bannerMessage || defaults.bannerMessage,
+  };
+}
+
 export interface FaqItem {
   question: string;
   answer: string;

@@ -81,6 +81,23 @@ export const product: Product = {
     intro:
       "Всяка кутия включва четири готови композиции с контури — достатъчно разнообразни, за да избереш настроението на момента.",
   },
+  howItWorksSection: {
+    heading: "Как протича рисуването",
+    steps: [
+      {
+        title: "Избери илюстрация",
+        description: "Всяко от четирите платна има готов контур — просто избери коя композиция ти говори днес.",
+      },
+      {
+        title: "Смеси цветовете",
+        description: "Шестте акварелни капки се разтварят с няколко капки вода директно върху палитрата.",
+      },
+      {
+        title: "Рисувай без бързане",
+        description: "Контурите водят ръката ти — няма грешни решения, само момент спокойствие с четка в ръка.",
+      },
+    ],
+  },
   illustrations: [
     {
       title: "Илюстрация №1",
@@ -172,15 +189,27 @@ export function getProductBySlug(slug: string): Product | undefined {
 
 export const deliveryMethods: DeliveryMethod[] = [
   {
-    id: "courier",
-    label: "Доставка с куриер до адрес",
-    description: "Срокове и цена на доставка: предстои да бъдат зададени.",
+    id: "box_now",
+    label: "BOX NOW",
+    description: "Доставка до автомат на BOX NOW.",
     available: true,
   },
   {
-    id: "box_now",
-    label: "BOX NOW — автомат за пратки",
-    description: "Избери автомат за доставка от списък с реални локации на BOX NOW.",
+    id: "speedy_office",
+    label: "Speedy",
+    description: "Доставка до офис на Speedy.",
+    available: true,
+  },
+  {
+    id: "speedy_locker",
+    label: "Speedy (автомат)",
+    description: "Доставка до автомат на Speedy.",
+    available: true,
+  },
+  {
+    id: "courier",
+    label: "Speedy (до адрес)",
+    description: "Доставка до адрес с Speedy.",
     available: true,
   },
 ];

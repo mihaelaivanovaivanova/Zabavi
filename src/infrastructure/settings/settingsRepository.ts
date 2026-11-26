@@ -6,7 +6,11 @@ export type IntegrationProvider =
   | "illustrations_section"
   | "faq"
   | "objections"
-  | "checkout";
+  | "checkout"
+  | "box_now_marketing"
+  | "how_it_works"
+  | "speedy_settlements"
+  | "shipping_prices";
 
 export interface SettingsRepository {
   get(provider: IntegrationProvider): Promise<Record<string, unknown> | null>;

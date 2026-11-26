@@ -40,13 +40,22 @@ export function GiftMeaning() {
     <Section tone="lavender">
       <h2 className="text-center text-3xl font-semibold text-ink-900">Подарък, който казва нещо повече</h2>
 
-      <div className="mx-auto mt-10 max-w-2xl rounded-2xl bg-paper-50 p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-burgundy-700">Някои подаръци казват</p>
-        <blockquote className="mt-4 space-y-2 border-l-4 border-accent-500 pl-5 italic text-lg text-ink-800">
+      <div className="mx-auto mt-10 max-w-2xl">
+        <p className="text-center text-sm font-semibold uppercase tracking-wide text-burgundy-700">Някои подаръци казват</p>
+        <div className="mt-4 space-y-4">
           {quoteLines.map((line) => (
-            <p key={line}>{line}</p>
+            <div key={line} className="relative mx-auto w-fit max-w-md px-6 py-5 sm:px-8 sm:max-w-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element -- decorative watercolor bubble background, not a content photo */}
+              <img
+                src="/images/gift-reason-bubble.webp"
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-fill"
+              />
+              <p className="relative text-center text-lg italic text-ink-800">{line}</p>
+            </div>
           ))}
-        </blockquote>
+        </div>
         <p className="mt-6 text-lg font-semibold text-ink-900">
           ЗАБАВЍ е подарък за онова нейно „някой ден ще опитам“.
         </p>
@@ -60,11 +69,10 @@ export function GiftMeaning() {
       </div>
 
       <div className="mx-auto mt-12 max-w-2xl divide-y divide-lavender-200">
-        {reasons.map((reason, index) => (
+        {reasons.map((reason) => (
           <div key={reason.title} className="flex gap-4 py-5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-burgundy-700 text-sm font-semibold text-paper-50">
-              {index + 1}
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element -- decorative brush icon, not a content photo */}
+            <img src="/icons/paintbrush.webp" alt="" aria-hidden="true" className="h-12 w-12 shrink-0" />
             <div>
               <h3 className="font-semibold text-ink-900">{reason.title}</h3>
               <p className="mt-1 text-ink-700">{reason.description}</p>

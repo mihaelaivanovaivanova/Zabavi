@@ -1,0 +1,126 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]: Безплатна доставка с BOX NOW
+  - banner [ref=f1e7]:
+    - generic [ref=f1e8]:
+      - link "ЗАБАВЍ — начало" [ref=f1e9] [cursor=pointer]:
+        - /url: /
+        - img "ЗАБАВЍ" [ref=f1e10]
+      - button "Количка" [ref=f1e11]
+  - dialog "Количка" [ref=f1e12]:
+    - generic [ref=f1e13]:
+      - heading "Количка" [level=2] [ref=f1e14]
+      - button "Затвори количката" [ref=f1e15]: ×
+    - paragraph [ref=f1e17]: Количката е празна.
+    - link "Разгледай комплектите" [ref=f1e19] [cursor=pointer]:
+      - /url: /
+  - main [ref=f1e20]:
+    - generic [ref=f1e21]:
+      - heading "Завърши поръчката" [level=1] [ref=f1e22]
+      - paragraph [ref=f1e23]: Гостово плащане — не е необходим акаунт.
+      - generic [ref=f1e25]:
+        - generic [ref=f1e26]:
+          - list [ref=f1e27]:
+            - listitem [ref=f1e28]:
+              - generic [ref=f1e29]: "1"
+              - generic [ref=f1e30]: Данни за поръчката
+            - listitem [ref=f1e32]:
+              - generic [ref=f1e33]: "2"
+              - generic [ref=f1e34]: Доставка и плащане
+            - listitem [ref=f1e36]:
+              - generic [ref=f1e37]: "3"
+              - generic [ref=f1e38]: Преглед
+            - listitem [ref=f1e40]:
+              - generic [ref=f1e41]: "4"
+              - generic [ref=f1e42]: Плащане
+          - generic [ref=f1e43]:
+            - heading "Данни за поръчката" [level=2] [ref=f1e44]
+            - group "Тема на комплекта" [ref=f1e45]:
+              - generic [ref=f1e47] [cursor=pointer]:
+                - radio "Магията на Коледа" [checked] [ref=f1e48]
+                - generic [ref=f1e49]: Магията на Коледа
+              - generic [ref=f1e50] [cursor=pointer]:
+                - radio "Извън очертанията" [ref=f1e51]
+                - generic [ref=f1e52]: Извън очертанията
+            - generic [ref=f1e53]:
+              - generic [ref=f1e54]:
+                - generic [ref=f1e55]: Име
+                - textbox "Име" [ref=f1e56]
+              - generic [ref=f1e57]:
+                - generic [ref=f1e58]: Фамилия
+                - textbox "Фамилия" [ref=f1e59]
+            - generic [ref=f1e60]:
+              - generic [ref=f1e61]: Телефон
+              - generic [ref=f1e62]:
+                - generic [ref=f1e63]: "+359"
+                - textbox "Телефон" [ref=f1e68]:
+                  - /placeholder: 08XXXXXXXX
+            - generic [ref=f1e69]:
+              - generic [ref=f1e70]: Имейл
+              - textbox "Имейл" [ref=f1e71]
+            - generic [ref=f1e72]:
+              - generic [ref=f1e73]: Брой кутии
+              - spinbutton "Брой кутии" [ref=f1e74]: "1"
+            - generic [ref=f1e75]:
+              - generic [ref=f1e76]: Лично послание (незадължително)
+              - textbox "Лично послание (незадължително)" [ref=f1e77]
+          - button "Напред" [ref=f1e79]
+        - generic [ref=f1e81]:
+          - heading "Обобщение на поръчката" [level=2] [ref=f1e82]
+          - generic [ref=f1e83]:
+            - generic [ref=f1e84]:
+              - term [ref=f1e85]:
+                - text: Акварелни комплекти „ЗАБАВЍ“
+                - generic [ref=f1e86]: Магията на Коледа
+              - definition [ref=f1e87]: × 1
+            - generic [ref=f1e88]:
+              - term [ref=f1e89]: Междинна сума
+              - definition [ref=f1e90]: предстои да се зададе
+            - generic [ref=f1e91]:
+              - term [ref=f1e92]: Доставка
+              - definition [ref=f1e93]: Безплатна
+            - generic [ref=f1e94]:
+              - term [ref=f1e95]: Отстъпка
+              - definition [ref=f1e96]: 0.00 €
+            - generic [ref=f1e97]:
+              - term [ref=f1e98]: Крайна сума
+              - definition [ref=f1e99]: предстои да се зададе
+  - contentinfo [ref=f1e100]:
+    - generic [ref=f1e101]:
+      - generic [ref=f1e102]:
+        - img "ЗАБАВЍ" [ref=f1e103]
+        - generic [ref=f1e104]:
+          - heading "Контакти" [level=2] [ref=f1e105]
+          - paragraph [ref=f1e106]: „ФИЛЧЕВ УЕБ“ ЕООД
+          - paragraph [ref=f1e107]: "ЕИК: 208699419"
+          - link "contact@zabavi.bg" [ref=f1e108] [cursor=pointer]:
+            - /url: mailto:contact@zabavi.bg
+      - navigation "Правна информация" [ref=f1e109]:
+        - heading "Правна информация" [level=2] [ref=f1e110]
+        - link "Общи условия" [ref=f1e111] [cursor=pointer]:
+          - /url: /terms
+        - link "Политика за поверителност и бисквитки" [ref=f1e112] [cursor=pointer]:
+          - /url: /privacy
+        - link "Право на отказ, връщане и рекламации" [ref=f1e113] [cursor=pointer]:
+          - /url: /returns
+        - link "Политика за доставка" [ref=f1e114] [cursor=pointer]:
+          - /url: /shipping
+        - button "Настройки на бисквитките" [ref=f1e115]
+      - generic [ref=f1e117]:
+        - img "Apple Pay" [ref=f1e118]
+        - img "Google Pay" [ref=f1e119]
+        - img "Visa" [ref=f1e121]
+        - img "Mastercard" [ref=f1e123]
+        - img "American Express" [ref=f1e124]
+    - generic [ref=f1e125]: © 2026 ЗАБАВЍ
+  - button "Open Next.js Dev Tools" [ref=f1e131] [cursor=pointer]
+  - alert [ref=f1e135]
+  - region "Настройки на бисквитките" [ref=f1e136]:
+    - generic [ref=f1e137]:
+      - paragraph [ref=f1e138]:
+        - text: Използваме бисквитки, за да осигурим правилната работа на Сайта. Можеш да приемеш всички бисквитки или да персонализираш избора си.
+        - link "Политика за поверителност и бисквитки" [ref=f1e139] [cursor=pointer]:
+          - /url: /privacy
+      - generic [ref=f1e140]:
+        - button "Персонализирай" [ref=f1e141]
+        - button "Само необходими" [ref=f1e142]
+        - button "Приеми всички" [ref=f1e143]

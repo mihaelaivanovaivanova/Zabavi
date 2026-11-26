@@ -23,11 +23,19 @@ describe("SpeedyApiProvider", () => {
     await expect(provider.createShipment(makeOrder())).rejects.toThrow(/истинска цена/i);
   });
 
-  it("refuses to run against non-courier shipping details", async () => {
+  it("refuses to run against a non-Speedy shipping method", async () => {
     const provider = new SpeedyApiProvider();
     const order = makeOrder({
       shippingDetails: { method: "box_now", lockerId: "LOCKER-1", addressLine1: "ул. 1", postalCode: "1000" },
     });
-    await expect(provider.createShipment(order)).rejects.toThrow(/non-courier/);
+    await expect(provider.createShipment(order)).rejects.toThrow(/non-Speedy/);
+  });
+
+  it("runs the same TBD-price guard for a Speedy office destination as for an address one", async () => {
+    // The office-vs-address request shape itself is covered by
+    // speedyApiClient.test.ts; this just confirms office/locker orders
+    // aren't accidentally skipping the shared price-confirmation guard.
+    const order = makeOrder({ shippingDetails: { method: "speedy_office", officeId: "4567", officeLabel: "София", city: "София" } });
+    await expect(new SpeedyApiProvider().createShipment(order)).rejects.toThrow(/истинска цена/i);
   });
 });

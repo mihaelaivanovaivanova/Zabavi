@@ -1,4 +1,6 @@
 import { Header } from "@/components/landing/Header";
+import { TopAnnouncementBar } from "@/components/landing/TopAnnouncementBar";
+import { BoxNowBadge } from "@/components/landing/BoxNowBadge";
 import { Hero } from "@/components/landing/Hero";
 import { FeaturedReviews } from "@/components/landing/FeaturedReviews";
 import { WhySpecial } from "@/components/landing/WhySpecial";
@@ -19,7 +21,9 @@ import { SelectedVariantProvider } from "@/lib/SelectedVariantContext";
 export default function HomePage() {
   return (
     <>
+      <TopAnnouncementBar />
       <Header />
+      <BoxNowBadge />
       <main>
         <SelectedVariantProvider defaultVariantId={product.variants[0].id}>
           <Hero />

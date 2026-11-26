@@ -1,24 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { InputField, TextareaField } from "@/components/ui/Field";
-import { AddressFields } from "@/components/checkout/AddressFields";
-import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/BoxNowLockerPicker";
-import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
+import { StepIndicator } from "@/components/checkout/StepIndicator";
+import { CustomerInfoStep } from "@/components/checkout/CustomerInfoStep";
+import { DeliveryAndPaymentStep } from "@/components/checkout/DeliveryAndPaymentStep";
+import { OrderReviewStep } from "@/components/checkout/OrderReviewStep";
 import { ICardPaymentWidget } from "@/components/checkout/ICardPaymentWidget";
-import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
-import { VariantSelector } from "@/components/checkout/VariantSelector";
-import { OrderSummary } from "@/components/checkout/OrderSummary";
+import { CheckoutSummary } from "@/components/checkout/CheckoutSummary";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/validation";
 import { product } from "@/config/site";
 import { resolveVariant } from "@/domain/kit/types";
 import { useCart } from "@/lib/CartContext";
 import { useKits } from "@/lib/useKits";
+import { usePricing } from "@/lib/usePricing";
+
+type WizardStep = 1 | 2 | 3 | 4;
 
 type SubmitState =
   | { status: "idle" }
@@ -34,7 +35,19 @@ type SubmitState =
     }
   | { status: "error"; message: string };
 
+const STEP_1_FIELDS = ["variantId", "firstName", "lastName", "phone", "email", "quantity", "giftMessage"] as const;
+const STEP_2_FIELDS = [
+  "deliveryMethod",
+  "address",
+  "city",
+  "postalCode",
+  "boxNowLockerId",
+  "speedyOfficeId",
+  "paymentMethod",
+] as const;
+
 export function CheckoutForm() {
+  const [step, setStep] = useState<WizardStep>(1);
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
   const { item: cartItem, clearCart } = useCart();
   const searchParams = useSearchParams();
@@ -48,6 +61,7 @@ export function CheckoutForm() {
   const {
     register,
     handleSubmit,
+    trigger,
     watch,
     setValue,
     formState: { errors },
@@ -55,17 +69,22 @@ export function CheckoutForm() {
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       variantId: defaultVariantId,
-      fullName: "",
+      firstName: "",
+      lastName: "",
       phone: "",
       email: "",
       address: "",
       city: "",
       postalCode: "",
-      deliveryMethod: "courier",
+      deliveryMethod: "box_now",
       boxNowLockerId: "",
       boxNowLockerAddressLine1: "",
       boxNowLockerPostalCode: "",
-      paymentMethod: "cash_on_delivery",
+      speedyOfficeId: "",
+      speedyOfficeLabel: "",
+      speedyOfficeCity: "",
+      paymentMethod: "card_icard",
+      wantsInvoice: false,
       giftMessage: "",
       quantity: defaultQuantity,
     },
@@ -75,10 +94,8 @@ export function CheckoutForm() {
   const quantity = watch("quantity");
   const deliveryMethod = watch("deliveryMethod");
   const paymentMethod = watch("paymentMethod");
-  const boxNowLockerId = watch("boxNowLockerId");
-  const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
-  const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
   const { kits } = useKits();
+  const pricing = usePricing();
   const activeKitPriceEur = kits.find((kit) => kit.variantId === variantId)?.priceEur ?? null;
   const resolvedVariants = product.variants.map((variant) =>
     resolveVariant(
@@ -97,14 +114,15 @@ export function CheckoutForm() {
     setValue("quantity", cartItem.quantity);
   }, [cartItem, setValue]);
 
-  const handleLockerSelect = useCallback(
-    (selection: BoxNowSelection) => {
-      setValue("boxNowLockerId", selection.lockerId, { shouldValidate: true });
-      setValue("boxNowLockerAddressLine1", selection.addressLine1);
-      setValue("boxNowLockerPostalCode", selection.postalCode);
-    },
-    [setValue],
-  );
+  async function goToNextStep() {
+    const fieldsToValidate = step === 1 ? STEP_1_FIELDS : STEP_2_FIELDS;
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid) setStep((current) => (Math.min(current + 1, 3) as WizardStep));
+  }
+
+  function goToPreviousStep() {
+    setStep((current) => (Math.max(current - 1, 1) as WizardStep));
+  }
 
   async function onSubmit(values: CheckoutFormValues) {
     setSubmitState({ status: "submitting" });
@@ -126,6 +144,7 @@ export function CheckoutForm() {
 
       if (data.paymentWidgetToken) {
         clearCart();
+        setStep(4);
         setSubmitState({
           status: "awaiting_card_payment",
           orderId: data.orderId,
@@ -136,6 +155,7 @@ export function CheckoutForm() {
       }
 
       clearCart();
+      setStep(4);
       setSubmitState({
         status: "success",
         orderId: data.orderId,
@@ -167,84 +187,44 @@ export function CheckoutForm() {
     const isAnyPartLive = submitState.paymentIsLive || submitState.shippingIsLive;
     return (
       <div className="rounded-2xl border border-sage-300 bg-sage-50 p-8 text-center">
-        <Badge tone="neutral">{isAnyPartLive ? "Поръчка" : "Демо"}</Badge>
+        <Badge tone="neutral">Поръчка</Badge>
         <h2 className="mt-4 text-2xl font-semibold text-ink-900">
-          {isAnyPartLive ? "Поръчката е приета" : "Демонстрацията е завършена"}
+          {isAnyPartLive ? "Поръчката е приета" : "Поръчката е получена"}
         </h2>
-        <p className="mt-3 text-ink-800">
-          {isAnyPartLive
-            ? "Част от обработката по-долу е реална; останалата остава демонстрационна, докато не бъдат зададени липсващите данни/credentials."
-            : "Това е прототип на checkout. Няма подадена реална поръчка и не е извършено реално плащане."}
-        </p>
         <p className="mt-2 text-sm text-ink-700">{submitState.shippingNotice}</p>
         <p className="mt-2 text-sm text-ink-700">{submitState.paymentNotice}</p>
-        <p className="mt-4 text-xs text-ink-700">{isAnyPartLive ? "ID" : "Демо ID"}: {submitState.orderId}</p>
+        <p className="mt-4 text-xs text-ink-700">ID: {submitState.orderId}</p>
       </div>
     );
   }
 
+  const variantLabel = resolvedVariants.find((variant) => variant.id === variantId)?.label;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-10 sm:grid-cols-[1fr_320px]">
+    <form onSubmit={(event) => event.preventDefault()} className="grid gap-10 sm:grid-cols-[1fr_320px]">
       <div className="space-y-8">
-        <div className="rounded-2xl bg-accent-400/10 px-4 py-3 text-sm text-accent-600">
-          Това е демонстрационен checkout. Не се подава реална поръчка и не се обработва реално плащане.
-        </div>
+        <StepIndicator currentStep={step} />
 
-        <VariantSelector variants={resolvedVariants} register={() => register("variantId")} />
-
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-ink-900">Данни за контакт</h2>
-          <InputField label="Име и фамилия" {...register("fullName")} error={errors.fullName?.message} />
-          <InputField label="Телефон" type="tel" {...register("phone")} error={errors.phone?.message} />
-          <InputField
-            label={paymentMethod === "card_icard" ? "Имейл" : "Имейл (незадължително)"}
-            type="email"
-            {...register("email")}
-            error={errors.email?.message}
+        {step === 1 ? (
+          <CustomerInfoStep
+            register={register}
+            errors={errors}
+            emailRequired={paymentMethod === "card_icard"}
+            variants={resolvedVariants}
           />
-        </div>
-
-        <DeliveryMethodSelector register={() => register("deliveryMethod")} />
-
-        {deliveryMethod === "box_now" ? (
-          <BoxNowLockerPicker
-            selected={
-              boxNowLockerId
-                ? {
-                    lockerId: boxNowLockerId,
-                    addressLine1: boxNowLockerAddressLine1 ?? "",
-                    postalCode: boxNowLockerPostalCode ?? "",
-                  }
-                : null
-            }
-            onSelect={handleLockerSelect}
-            error={errors.boxNowLockerId?.message}
-          />
-        ) : (
-          <AddressFields register={register} errors={errors} />
-        )}
-
-        <PaymentMethodSelector register={() => register("paymentMethod")} />
-
-        {deliveryMethod === "box_now" && paymentMethod === "card_icard" ? (
-          <AddressFields register={register} errors={errors} title="Адрес за фактуриране" />
         ) : null}
 
-        <div className="space-y-4">
-          <InputField
-            label="Брой кутии"
-            type="number"
-            min={1}
-            max={10}
-            {...register("quantity", { valueAsNumber: true })}
-            error={errors.quantity?.message}
+        {step === 2 ? (
+          <DeliveryAndPaymentStep
+            register={register}
+            errors={errors}
+            watch={watch}
+            setValue={setValue}
+            codFeeEur={pricing.codFeeEur}
           />
-          <TextareaField
-            label="Лично послание (незадължително)"
-            {...register("giftMessage")}
-            error={errors.giftMessage?.message}
-          />
-        </div>
+        ) : null}
+
+        {step === 3 ? <OrderReviewStep values={watch()} variantLabel={variantLabel} /> : null}
 
         {submitState.status === "error" ? (
           <p role="alert" className="text-sm text-burgundy-600">
@@ -252,16 +232,36 @@ export function CheckoutForm() {
           </p>
         ) : null}
 
-        <Button type="submit" disabled={submitState.status === "submitting"}>
-          {submitState.status === "submitting" ? "Изпращане…" : "Завърши поръчката (демо)"}
-        </Button>
+        <div className="flex items-center justify-between gap-4">
+          {step > 1 ? (
+            <Button type="button" variant="secondary" onClick={goToPreviousStep}>
+              Назад
+            </Button>
+          ) : (
+            <span />
+          )}
+
+          {step < 3 ? (
+            <Button type="button" onClick={goToNextStep}>
+              Напред
+            </Button>
+          ) : (
+            <Button type="button" onClick={handleSubmit(onSubmit)} disabled={submitState.status === "submitting"}>
+              {submitState.status === "submitting" ? "Изпращане…" : "Завърши поръчката"}
+            </Button>
+          )}
+        </div>
       </div>
 
       <div>
-        <OrderSummary
+        <CheckoutSummary
           quantity={Number(quantity) || 1}
-          variantLabel={resolvedVariants.find((variant) => variant.id === variantId)?.label}
+          variantLabel={variantLabel}
           priceEur={activeKitPriceEur}
+          deliveryMethod={deliveryMethod}
+          isCashOnDelivery={paymentMethod === "cash_on_delivery"}
+          shippingPrices={pricing.shippingPrices}
+          codFeeEur={pricing.codFeeEur}
         />
       </div>
     </form>

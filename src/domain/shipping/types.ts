@@ -1,6 +1,18 @@
 import type { OrderDraft } from "@/domain/order/types";
 
-export type DeliveryMethodId = "courier" | "box_now";
+/**
+ * "courier" = Speedy to address; "speedy_office"/"speedy_locker" are
+ * Speedy's two pickup-point variants (staffed office vs. automated
+ * machine/APT — see smisul.bg's `SpeedyShippingProvider::offices()`, which
+ * distinguishes them by the office's own `type` field). All three resolve
+ * to the same `SpeedyApiProvider` — see `getShippingProvider.ts`.
+ */
+export type DeliveryMethodId = "courier" | "box_now" | "speedy_office" | "speedy_locker";
+
+/** Whether this delivery method's shipment is handled by Speedy (as opposed to BOX NOW). */
+export function isSpeedyDeliveryMethod(method: DeliveryMethodId): boolean {
+  return method === "courier" || method === "speedy_office" || method === "speedy_locker";
+}
 
 export interface DeliveryMethod {
   id: DeliveryMethodId;
@@ -30,7 +42,27 @@ export interface BoxNowShippingDetails {
   postalCode: string;
 }
 
-export type ShippingDetails = CourierShippingDetails | BoxNowShippingDetails;
+/** A Speedy staffed office, selected via the real office search (`/api/shipping/speedy/offices`). */
+export interface SpeedyOfficeShippingDetails {
+  method: "speedy_office";
+  officeId: string;
+  officeLabel: string;
+  city: string;
+}
+
+/** A Speedy automated machine (APT) — same office data shape, different pickup type. */
+export interface SpeedyLockerShippingDetails {
+  method: "speedy_locker";
+  officeId: string;
+  officeLabel: string;
+  city: string;
+}
+
+export type ShippingDetails =
+  | CourierShippingDetails
+  | BoxNowShippingDetails
+  | SpeedyOfficeShippingDetails
+  | SpeedyLockerShippingDetails;
 
 export interface ShipmentCreationResult {
   /** True once a real carrier API created the shipment; false for the demo/stub path. */

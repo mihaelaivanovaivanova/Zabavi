@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
+import { TopAnnouncementBar } from "@/components/landing/TopAnnouncementBar";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { Container } from "@/components/ui/Container";
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export default function CheckoutPage() {
   return (
     <>
+      <TopAnnouncementBar />
       <Header />
       <main className="bg-paper-100 py-12 sm:py-16">
         <Container>

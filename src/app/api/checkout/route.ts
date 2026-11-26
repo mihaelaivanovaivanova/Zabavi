@@ -44,35 +44,61 @@ export async function POST(request: Request) {
 
   const totals = await calculateTotals(
     [{ productSlug: product.slug, variantId: values.variantId, quantity: values.quantity }],
-    { paymentMethod: values.paymentMethod },
+    { paymentMethod: values.paymentMethod, deliveryMethod: values.deliveryMethod },
   );
 
-  const shippingDetails: ShippingDetails =
-    values.deliveryMethod === "box_now"
-      ? {
-          method: "box_now",
-          lockerId: values.boxNowLockerId ?? "",
-          addressLine1: values.boxNowLockerAddressLine1 ?? "",
-          postalCode: values.boxNowLockerPostalCode ?? "",
-        }
-      : {
-          method: "courier",
-          address: values.address ?? "",
-          city: values.city ?? "",
-          postalCode: values.postalCode ?? "",
-        };
+  let shippingDetails: ShippingDetails;
+  switch (values.deliveryMethod) {
+    case "box_now":
+      shippingDetails = {
+        method: "box_now",
+        lockerId: values.boxNowLockerId ?? "",
+        addressLine1: values.boxNowLockerAddressLine1 ?? "",
+        postalCode: values.boxNowLockerPostalCode ?? "",
+      };
+      break;
+    case "speedy_office":
+      shippingDetails = {
+        method: "speedy_office",
+        officeId: values.speedyOfficeId ?? "",
+        officeLabel: values.speedyOfficeLabel ?? "",
+        city: values.speedyOfficeCity ?? "",
+      };
+      break;
+    case "speedy_locker":
+      shippingDetails = {
+        method: "speedy_locker",
+        officeId: values.speedyOfficeId ?? "",
+        officeLabel: values.speedyOfficeLabel ?? "",
+        city: values.speedyOfficeCity ?? "",
+      };
+      break;
+    case "courier":
+      shippingDetails = {
+        method: "courier",
+        address: values.address ?? "",
+        city: values.city ?? "",
+        postalCode: values.postalCode ?? "",
+      };
+      break;
+  }
 
   const createdAt = new Date();
   const order: OrderDraft = {
     id: randomUUID(),
     orderNumber: generateOrderNumber(createdAt),
-    customer: { fullName: values.fullName, phone: values.phone, email: values.email || undefined },
+    customer: {
+      fullName: `${values.firstName} ${values.lastName}`.trim(),
+      phone: values.phone,
+      email: values.email || undefined,
+    },
     customerIp: getClientIp(request),
     billingAddress:
       values.address && values.city && values.postalCode
         ? { address: values.address, city: values.city, postalCode: values.postalCode }
         : undefined,
     shippingDetails,
+    wantsInvoice: values.wantsInvoice,
     giftMessage: values.giftMessage,
     items: [{ productSlug: product.slug, variantId: values.variantId, quantity: values.quantity }],
     paymentMethod: values.paymentMethod,

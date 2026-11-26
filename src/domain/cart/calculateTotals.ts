@@ -1,8 +1,10 @@
 import { getProductBySlug } from "@/config/site";
 import type { CartLineItem, OrderTotals } from "@/domain/cart/types";
 import type { PaymentMethodId } from "@/domain/payment/types";
+import type { DeliveryMethodId } from "@/domain/shipping/types";
 import { kitRepository } from "@/infrastructure/repositories/kitRepository";
 import { getCodFeeEur } from "@/infrastructure/settings/checkoutSettingsService";
+import { getShippingPriceFor } from "@/infrastructure/settings/shippingPricesService";
 
 export type VariantPriceLookup = (productSlug: string, variantId: string) => Promise<number | null> | number | null;
 
@@ -15,6 +17,8 @@ async function defaultPriceLookup(productSlug: string, variantId: string): Promi
 export interface CalculateTotalsOptions {
   /** Folds in `checkoutSettingsService.ts`'s COD surcharge when set to `"cash_on_delivery"`. */
   paymentMethod?: PaymentMethodId;
+  /** Looked up via `shippingPricesService.ts` — `0` (free) until the admin sets a real price for that method. */
+  deliveryMethod?: DeliveryMethodId;
   priceLookup?: VariantPriceLookup;
 }
 
@@ -51,7 +55,7 @@ export async function calculateTotals(
     subtotalEur += price * item.quantity;
   }
 
-  const shippingEur = 0;
+  const shippingEur = options.deliveryMethod ? await getShippingPriceFor(options.deliveryMethod) : 0;
   const codFeeEur = options.paymentMethod === "cash_on_delivery" ? await getCodFeeEur() : 0;
 
   return {

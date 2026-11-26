@@ -11,6 +11,7 @@ import { orderDisplayStatus, orderStatusDisplay } from "@/lib/orderStats";
 import { formatEur } from "@/lib/format";
 import { allowedTransitions } from "@/domain/order/orderStatusService";
 import { shipmentStatusLabel } from "@/domain/shipping/types";
+import { shippingAddressLine } from "@/infrastructure/email/orderEmails";
 import type { OrderDraft } from "@/domain/order/types";
 
 /**
@@ -226,11 +227,7 @@ async function OrderDetailSection({ id }: { id: string }) {
 
           <section className="rounded-2xl border border-lavender-200 bg-paper-50 p-6">
             <h2 className="text-lg font-semibold text-ink-900">Адрес за доставка</h2>
-            <p className="mt-3 text-sm text-ink-800">
-              {order.shippingDetails.method === "courier"
-                ? `${order.shippingDetails.address}, ${order.shippingDetails.city} ${order.shippingDetails.postalCode}`
-                : `BOX NOW автомат ${order.shippingDetails.lockerId} — ${order.shippingDetails.addressLine1} ${order.shippingDetails.postalCode}`}
-            </p>
+            <p className="mt-3 text-sm text-ink-800">{shippingAddressLine(order)}</p>
             {order.giftMessage ? (
               <p className="mt-3 text-sm text-ink-700">
                 <span className="text-ink-700">Лично послание: </span>

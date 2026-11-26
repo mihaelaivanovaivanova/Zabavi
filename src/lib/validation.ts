@@ -6,11 +6,8 @@ const variantIds = product.variants.map((variant) => variant.id) as [string, ...
 export const checkoutSchema = z
   .object({
     variantId: z.enum(variantIds),
-    fullName: z
-      .string()
-      .trim()
-      .min(3, "Моля, въведи име и фамилия.")
-      .max(120, "Името е твърде дълго."),
+    firstName: z.string().trim().min(2, "Въведи име.").max(60, "Името е твърде дълго."),
+    lastName: z.string().trim().min(2, "Въведи фамилия.").max(60, "Фамилията е твърде дълга."),
     phone: z
       .string()
       .trim()
@@ -24,18 +21,22 @@ export const checkoutSchema = z
     address: z.string().trim().optional(),
     city: z.string().trim().optional(),
     postalCode: z.string().trim().optional(),
-    deliveryMethod: z.enum(["courier", "box_now"]),
+    deliveryMethod: z.enum(["box_now", "speedy_office", "speedy_locker", "courier"]),
     boxNowLockerId: z.string().trim().optional(),
     boxNowLockerAddressLine1: z.string().trim().optional(),
     boxNowLockerPostalCode: z.string().trim().optional(),
+    speedyOfficeId: z.string().trim().optional(),
+    speedyOfficeLabel: z.string().trim().optional(),
+    speedyOfficeCity: z.string().trim().optional(),
     paymentMethod: z.enum(["card_icard", "cash_on_delivery"]),
+    wantsInvoice: z.boolean().optional(),
     giftMessage: z.string().trim().max(300, "Личното послание е твърде дълго.").optional(),
     quantity: z.number().int().min(1, "Количеството трябва да е поне 1.").max(10, "Максимум 10 броя."),
   })
   .superRefine((values, ctx) => {
-    // Billing address is required for courier delivery (it doubles as the shipping
-    // address) and also whenever card_icard is chosen — iCard's IPGPurchase requires
-    // a billing address regardless of delivery method (e.g. BOX NOW + card).
+    // Billing address is required for Speedy-to-address delivery (it doubles as the
+    // shipping address) and also whenever card_icard is chosen — iCard's IPGPurchase
+    // requires a billing address regardless of delivery method.
     if (values.deliveryMethod === "courier" || values.paymentMethod === "card_icard") {
       if (!values.address || values.address.length < 5) {
         ctx.addIssue({ code: "custom", path: ["address"], message: "Въведи адрес за фактуриране." });
@@ -49,11 +50,23 @@ export const checkoutSchema = z
     }
 
     if (values.deliveryMethod === "box_now" && !values.boxNowLockerId) {
+      ctx.addIssue({ code: "custom", path: ["boxNowLockerId"], message: "Избери автомат BOX NOW за доставка." });
+    }
+
+    if ((values.deliveryMethod === "speedy_office" || values.deliveryMethod === "speedy_locker") && !values.speedyOfficeId) {
       ctx.addIssue({
         code: "custom",
-        path: ["boxNowLockerId"],
-        message: "Избери автомат BOX NOW за доставка.",
+        path: ["speedyOfficeId"],
+        message:
+          values.deliveryMethod === "speedy_office" ? "Избери офис на Speedy за доставка." : "Избери автомат на Speedy за доставка.",
       });
+    }
+
+    // Cash on delivery is only offerable through Speedy (which meets the
+    // customer in person to collect) — BOX NOW's locker network has no
+    // courier at the door, same gating as smisul.bg's PaymentService.
+    if (values.paymentMethod === "cash_on_delivery" && values.deliveryMethod === "box_now") {
+      ctx.addIssue({ code: "custom", path: ["paymentMethod"], message: "Наложен платеж не е наличен за доставка с BOX NOW." });
     }
 
     // iCard's IPGPurchase requires the cardholder's email.

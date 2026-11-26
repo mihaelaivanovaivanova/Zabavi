@@ -3,9 +3,12 @@ import { connection } from "next/server";
 import { getBoxNowSettingsForAdmin } from "@/infrastructure/settings/boxNowSettingsService";
 import { getSpeedySettingsForAdmin } from "@/infrastructure/settings/speedySettingsService";
 import { getCodFeeEur } from "@/infrastructure/settings/checkoutSettingsService";
+import { getShippingPrices } from "@/infrastructure/settings/shippingPricesService";
+import { getBoxNowMarketingContentForAdmin } from "@/infrastructure/content/boxNowMarketingService";
 import { BoxNowSettingsForm } from "@/components/admin/BoxNowSettingsForm";
 import { SpeedySettingsForm } from "@/components/admin/SpeedySettingsForm";
 import { CodFeeSettingsForm } from "@/components/admin/CodFeeSettingsForm";
+import { DeliveryPricesForm } from "@/components/admin/DeliveryPricesForm";
 import { SettingsNav } from "@/components/admin/SettingsNav";
 
 export default function ShippingSettingsPage() {
@@ -25,16 +28,19 @@ export default function ShippingSettingsPage() {
 
 async function ShippingSettingsSections() {
   await connection();
-  const [boxNow, speedy, codFeeEur] = await Promise.all([
+  const [boxNow, speedy, codFeeEur, boxNowMarketing, shippingPrices] = await Promise.all([
     getBoxNowSettingsForAdmin(),
     getSpeedySettingsForAdmin(),
     getCodFeeEur(),
+    getBoxNowMarketingContentForAdmin(),
+    getShippingPrices(),
   ]);
 
   return (
     <div className="mt-8 space-y-8">
-      <BoxNowSettingsForm initial={boxNow} />
+      <BoxNowSettingsForm initial={boxNow} initialMarketing={boxNowMarketing} />
       <SpeedySettingsForm initial={speedy} />
+      <DeliveryPricesForm initial={shippingPrices} />
       <CodFeeSettingsForm initial={{ codFeeEur }} />
     </div>
   );
