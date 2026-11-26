@@ -65,4 +65,22 @@ describe("SearchableSelect", () => {
 
     expect(screen.getByRole("combobox")).toBeDisabled();
   });
+
+  it("shows a loading message instead of 'no matches' when isLoading is set and options is empty", () => {
+    render(<SearchableSelect id="city" value="" options={[]} placeholder="Избери град" onChange={() => {}} isLoading />);
+
+    fireEvent.focus(screen.getByRole("combobox"));
+
+    expect(screen.getByText("Зареждане…")).toBeInTheDocument();
+    expect(screen.queryByText("Няма съвпадения.")).not.toBeInTheDocument();
+  });
+
+  it("shows 'no matches' (not loading) when isLoading is false and there are genuinely no options", () => {
+    render(<SearchableSelect id="city" value="" options={[]} placeholder="Избери град" onChange={() => {}} />);
+
+    fireEvent.focus(screen.getByRole("combobox"));
+
+    expect(screen.getByText("Няма съвпадения.")).toBeInTheDocument();
+    expect(screen.queryByText("Зареждане…")).not.toBeInTheDocument();
+  });
 });

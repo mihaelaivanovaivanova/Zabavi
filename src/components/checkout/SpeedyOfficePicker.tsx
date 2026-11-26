@@ -38,7 +38,7 @@ function officeLabel(office: SpeedyOfficeOption): string {
  * (~30s) to offer up front.
  */
 export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOfficePickerProps) {
-  const { settlements, loadError: settlementsError } = useSettlements();
+  const { settlements, loadError: settlementsError, isLoading: isLoadingSettlements } = useSettlements();
   // null means "not yet manually touched" — the city then falls back to
   // whichever office is already selected (e.g. navigating back to this
   // step), derived at render time instead of synced in via an effect.
@@ -46,7 +46,7 @@ export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOf
   const city = cityOverride ?? selected?.city ?? "";
 
   const [offices, setOffices] = useState<SpeedyOfficeOption[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingOffices, setIsLoadingOffices] = useState(false);
   const [officesError, setOfficesError] = useState(false);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOf
     // used by CartContext.tsx's own hydration effect).
     Promise.resolve().then(() => {
       if (!cancelled) {
-        setIsLoading(true);
+        setIsLoadingOffices(true);
         setOfficesError(false);
       }
     });
@@ -76,7 +76,7 @@ export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOf
         if (!cancelled) setOfficesError(true);
       })
       .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) setIsLoadingOffices(false);
       });
 
     return () => {
@@ -118,6 +118,7 @@ export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOf
           value={city}
           options={cityOptions}
           placeholder="Избери град"
+          isLoading={isLoadingSettlements}
           onChange={(nextCity) => {
             setCityOverride(nextCity);
             onSelect(null);
@@ -133,7 +134,7 @@ export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOf
           <p role="alert" className="text-sm text-burgundy-600">
             Неуспешно зареждане на локациите на Speedy. Опитай отново.
           </p>
-        ) : isLoading ? (
+        ) : isLoadingOffices ? (
           <p className="text-sm text-ink-700">Зареждане…</p>
         ) : (
           <SearchableSelect

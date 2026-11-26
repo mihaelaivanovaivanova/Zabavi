@@ -38,7 +38,7 @@ function loadSettlements(): Promise<Settlement[]> {
 }
 
 /** Client-side fetch of Bulgaria's full settlement nomenclature (see /api/content/settlements), cached for the page's lifetime. */
-export function useSettlements(): { settlements: Settlement[]; loadError: boolean } {
+export function useSettlements(): { settlements: Settlement[]; loadError: boolean; isLoading: boolean } {
   const [settlements, setSettlements] = useState<Settlement[]>(cachedSettlements ?? []);
   const [loadError, setLoadError] = useState(false);
 
@@ -58,5 +58,12 @@ export function useSettlements(): { settlements: Settlement[]; loadError: boolea
     };
   }, []);
 
-  return { settlements, loadError };
+  // The real list is never actually empty once it arrives (~5,300 rows) —
+  // so "nothing yet" reliably means "still in flight", not "no results".
+  // Callers use this to tell a real "no matches" apart from a dropdown that
+  // just opened before the one-time fetch finished (the settlements request
+  // alone takes a couple of seconds on a cold first load).
+  const isLoading = settlements.length === 0 && !loadError;
+
+  return { settlements, loadError, isLoading };
 }

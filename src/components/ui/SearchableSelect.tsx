@@ -19,6 +19,8 @@ interface SearchableSelectProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   error?: string;
+  /** True while `options` is still being fetched — shown instead of "Няма съвпадения" so an empty list isn't mistaken for a real no-matches result. */
+  isLoading?: boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export function SearchableSelect({
   onChange,
   disabled = false,
   error,
+  isLoading = false,
 }: SearchableSelectProps) {
   const selectedOption = options.find((option) => option.value === value) ?? null;
 
@@ -127,7 +130,7 @@ export function SearchableSelect({
           className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-lavender-200 bg-paper-50 py-1 shadow-lg"
         >
           {filteredOptions.length === 0 ? (
-            <li className="px-4 py-2 text-sm text-ink-700">Няма съвпадения.</li>
+            <li className="px-4 py-2 text-sm text-ink-700">{isLoading ? "Зареждане…" : "Няма съвпадения."}</li>
           ) : (
             filteredOptions.map((option, index) => (
               <li key={option.value}>

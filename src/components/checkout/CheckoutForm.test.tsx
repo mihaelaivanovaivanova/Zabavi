@@ -43,22 +43,8 @@ function fillStep1() {
   fireEvent.input(screen.getByLabelText("Имейл"), { target: { value: "ivan@example.com" } });
 }
 
-// Each native-<select>-based picker's <select> is a sibling of its own
-// search input within the same wrapper div, so scoping to that wrapper
-// avoids grabbing another picker's <select> when more than one is mounted.
-async function selectFromSiblingDropdown(searchInput: HTMLElement, value: string) {
-  const wrapper = searchInput.closest("div");
-  if (!wrapper) throw new Error("search input has no wrapper div");
-  const select = await waitFor(() => {
-    const element = wrapper.querySelector("select");
-    if (!element) throw new Error("<select> not rendered yet");
-    return element;
-  });
-  fireEvent.change(select, { target: { value } });
-}
-
-// SearchableSelect (BOX NOW's city/locker cascade) opens its option list on
-// focus and selects via a plain button click, not a native <select>.
+// SearchableSelect opens its option list on focus and selects via a plain
+// button click.
 async function selectFromSearchableSelect(labelText: string, optionName: string) {
   fireEvent.focus(screen.getByLabelText(labelText));
   const option = await screen.findByRole("option", { name: optionName });
@@ -74,11 +60,8 @@ async function selectBoxNowLocker() {
 // delivery, is blocked for BOX NOW) — and card_icard always requires a
 // billing address regardless of delivery method, so this fills that in too.
 async function fillBoxNowBillingAddress() {
+  await selectFromSearchableSelect("Населено място", "гр. Варна (общ. Варна, обл. Варна)");
   fireEvent.input(screen.getByLabelText("Адрес"), { target: { value: "ул. Примерна 1" } });
-  const citySearchInput = screen.getByLabelText("Населено място");
-  fireEvent.input(citySearchInput, { target: { value: "Варна" } });
-  await selectFromSiblingDropdown(citySearchInput, "1");
-  fireEvent.input(screen.getByLabelText("Пощенски код"), { target: { value: "9000" } });
 }
 
 beforeEach(() => {

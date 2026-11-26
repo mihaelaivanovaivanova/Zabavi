@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { SpeedyOfficePicker } from "@/components/checkout/SpeedyOfficePicker";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const SETTLEMENTS = [
   { id: "1", type: "гр.", name: "Варна", municipality: "Варна", region: "Варна", postalCode: "9000" },
@@ -30,6 +29,13 @@ function mockFetches() {
   );
 }
 
+beforeEach(() => {
+  // useSettlements caches its result at module scope for the page's whole
+  // lifetime (see useSettlements.ts) — reset it between tests so each
+  // test's own fetch mock is actually exercised.
+  vi.resetModules();
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -37,6 +43,7 @@ afterEach(() => {
 describe("SpeedyOfficePicker", () => {
   it("disables the office field until a city is chosen", async () => {
     mockFetches();
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
     render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
 
     await waitFor(() => expect(screen.getByLabelText("Офис")).toBeDisabled());
@@ -44,6 +51,7 @@ describe("SpeedyOfficePicker", () => {
 
   it("fetches and lists only the offices for the chosen city", async () => {
     mockFetches();
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
     render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
 
     fireEvent.focus(screen.getByLabelText("Град"));
@@ -58,6 +66,7 @@ describe("SpeedyOfficePicker", () => {
 
   it("labels the second field 'Автомат' for the locker type", async () => {
     mockFetches();
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
     render(<SpeedyOfficePicker type="locker" selected={null} onSelect={() => {}} />);
 
     expect(screen.getByLabelText("Автомат")).toBeInTheDocument();
@@ -65,6 +74,7 @@ describe("SpeedyOfficePicker", () => {
 
   it("calls onSelect with the chosen office's id, label and city", async () => {
     mockFetches();
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
     const onSelect = vi.fn();
     render(<SpeedyOfficePicker type="office" selected={null} onSelect={onSelect} />);
 
@@ -81,6 +91,7 @@ describe("SpeedyOfficePicker", () => {
 
   it("clears the previous office selection when the city is changed", async () => {
     mockFetches();
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
     const onSelect = vi.fn();
     render(<SpeedyOfficePicker type="office" selected={{ officeId: "O1", officeLabel: "Офис Център — ул. Тест 1", city: "Варна" }} onSelect={onSelect} />);
 
@@ -93,6 +104,7 @@ describe("SpeedyOfficePicker", () => {
 
   it("allows a Latin-typed city search to find a Cyrillic settlement", async () => {
     mockFetches();
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
     render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
 
     const cityInput = screen.getByLabelText("Град");
@@ -102,5 +114,34 @@ describe("SpeedyOfficePicker", () => {
 
     expect(screen.getByRole("option", { name: "Варна" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "София" })).not.toBeInTheDocument();
+  });
+
+  it("shows a loading message in the city field instead of 'no matches' while settlements are still being fetched", async () => {
+    // A promise that never resolves during this test — simulates the city
+    // field being opened before the real (~5,300-row, a couple of seconds
+    // on a cold first load) settlements fetch has come back.
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
+    render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
+
+    fireEvent.focus(screen.getByLabelText("Град"));
+    expect(screen.getByText("Зареждане…")).toBeInTheDocument();
+    expect(screen.queryByText("Няма съвпадения.")).not.toBeInTheDocument();
+  });
+
+  it("reuses the already-fetched settlements on a later mount instead of fetching again", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ settlements: SETTLEMENTS }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
+
+    const first = render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
+    fireEvent.focus(screen.getByLabelText("Град"));
+    await waitFor(() => expect(screen.getByRole("option", { name: "Варна" })).toBeInTheDocument());
+    first.unmount();
+
+    render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
+    fireEvent.focus(screen.getByLabelText("Град"));
+    expect(screen.getByRole("option", { name: "Варна" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

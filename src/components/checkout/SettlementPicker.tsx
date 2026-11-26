@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { inputClasses } from "@/components/ui/Field";
+import { useMemo } from "react";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { useSettlements } from "@/lib/useSettlements";
 
 export interface SettlementSelection {
   label: string;
@@ -22,10 +23,10 @@ function settlementLabel(settlement: SettlementOption): string {
 }
 
 /**
- * Bulgaria's full settlement list ("Населено място") as a searchable
- * dropdown, same mechanism as `BoxNowLockerPicker.tsx` — backed by
- * `/api/content/settlements` (Speedy's real nomenclature, cached
- * server-side), ported from smisul.bg's own checkout picker.
+ * Bulgaria's full settlement list ("Населено място") as a bilingual
+ * (Cyrillic or Latin) searchable dropdown, same mechanism as
+ * SpeedyOfficePicker.tsx's own city field — backed by
+ * /api/content/settlements (Speedy's real nomenclature, cached).
  */
 export function SettlementPicker({
   value,
@@ -36,41 +37,20 @@ export function SettlementPicker({
   onSelect: (selection: SettlementSelection) => void;
   error?: string;
 }) {
-  const [settlements, setSettlements] = useState<SettlementOption[]>([]);
-  const [loadError, setLoadError] = useState(false);
-  const [search, setSearch] = useState(value);
+  const { settlements, loadError, isLoading } = useSettlements();
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/content/settlements")
-      .then((response) => {
-        if (!response.ok) throw new Error("failed to load settlements");
-        return response.json();
-      })
-      .then((data: { settlements: SettlementOption[] }) => {
-        if (!cancelled) setSettlements(data.settlements);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // The settlement's own id isn't exposed to the caller (only the
+  // formatted label + postal code are), so the current selection is
+  // matched back by label — same approach the old free-text version used.
+  const selectedId = useMemo(() => settlements.find((settlement) => settlementLabel(settlement) === value)?.id ?? "", [settlements, value]);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return [];
-    return settlements.filter((settlement) => settlement.name.toLowerCase().includes(term)).slice(0, 50);
-  }, [settlements, search]);
-
-  function handleSelectChange(id: string) {
-    const settlement = settlements.find((candidate) => candidate.id === id);
-    if (!settlement) return;
-    const label = settlementLabel(settlement);
-    setSearch(label);
-    onSelect({ label, postalCode: settlement.postalCode });
-  }
+  const options = useMemo(
+    // searchText is just the settlement's own name — searching "Sofia" should
+    // find гр. София, not every village whose municipality/region happens to
+    // contain "София" (which the full disambiguated label would also match).
+    () => settlements.map((settlement) => ({ value: settlement.id, label: settlementLabel(settlement), searchText: settlement.name })),
+    [settlements],
+  );
 
   if (loadError) {
     return (
@@ -81,40 +61,22 @@ export function SettlementPicker({
   }
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-ink-800" htmlFor="settlement-search">
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-ink-800" htmlFor="settlement-search">
         Населено място
       </label>
-      <input
+      <SearchableSelect
         id="settlement-search"
-        type="text"
-        className={inputClasses}
-        placeholder="Избери град или село…"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
+        value={selectedId}
+        options={options}
+        placeholder="Избери населено място"
+        error={error}
+        isLoading={isLoading}
+        onChange={(settlementId) => {
+          const settlement = settlements.find((candidate) => candidate.id === settlementId);
+          if (settlement) onSelect({ label: settlementLabel(settlement), postalCode: settlement.postalCode });
+        }}
       />
-      {search.trim() && search !== value ? (
-        <select
-          className={inputClasses}
-          size={Math.min(Math.max(filtered.length, 1), 8)}
-          onChange={(event) => handleSelectChange(event.target.value)}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            {filtered.length === 0 ? `Няма намерени резултати за "${search}"` : "Избери от списъка…"}
-          </option>
-          {filtered.map((settlement) => (
-            <option key={settlement.id} value={settlement.id}>
-              {settlementLabel(settlement)}
-            </option>
-          ))}
-        </select>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-burgundy-600">
-          {error}
-        </p>
-      ) : null}
     </div>
   );
 }

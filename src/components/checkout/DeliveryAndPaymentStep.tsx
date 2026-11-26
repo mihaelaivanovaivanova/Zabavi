@@ -44,26 +44,84 @@ export function DeliveryAndPaymentStep({
     setValue("speedyOfficeCity", selection?.city ?? "");
   }
 
+  const paymentRegistration = register("paymentMethod");
+
+  function handlePaymentMethodChange(nextPaymentMethod: string) {
+    // BOX NOW's locker network has no courier at the door to collect cash,
+    // so it can't pair with cash on delivery — move off it automatically
+    // instead of leaving the form in a combination its own validation would
+    // reject (same approach smisul.bg's checkout uses).
+    if (nextPaymentMethod === "cash_on_delivery" && deliveryMethod === "box_now") {
+      const fallback = deliveryMethods.find((method) => method.available && method.id !== "box_now");
+      if (fallback) {
+        setValue("deliveryMethod", fallback.id, { shouldValidate: true });
+        setValue("boxNowLockerId", "");
+        setValue("boxNowLockerAddressLine1", "");
+        setValue("boxNowLockerPostalCode", "");
+      }
+    }
+  }
+
   return (
     <div className="space-y-8">
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-ink-900">Начин на плащане</h2>
+        <fieldset className="flex flex-col gap-3">
+          <legend className="sr-only">Начин на плащане</legend>
+          {paymentMethods.map((method) => (
+            <label
+              key={method.id}
+              className="flex items-start gap-3 rounded-xl border border-lavender-200 bg-paper-50 px-4 py-3 cursor-pointer"
+            >
+              <input
+                type="radio"
+                value={method.id}
+                className="mt-1"
+                {...paymentRegistration}
+                onChange={(event) => {
+                  paymentRegistration.onChange(event);
+                  handlePaymentMethodChange(event.target.value);
+                }}
+              />
+              <span>
+                <span className="flex items-center gap-2 font-medium text-ink-900">
+                  {method.label}
+                  {method.id === "cash_on_delivery" && codFeeEur > 0 ? <Badge tone="neutral">+{codFeeEur.toFixed(2)} €</Badge> : null}
+                </span>
+                <span className="block text-sm text-ink-700">{method.description}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        {errors.paymentMethod?.message ? (
+          <p role="alert" className="text-sm text-burgundy-600">
+            {errors.paymentMethod.message}
+          </p>
+        ) : null}
+      </div>
+
       <div className="space-y-3">
         <h2 className="text-lg font-semibold text-ink-900">Начин на доставка</h2>
         <fieldset className="flex flex-col gap-3">
           <legend className="sr-only">Начин на доставка</legend>
           {deliveryMethods.map((method) => {
             const priceEur = shippingPrices?.[method.id] ?? 0;
+            // BOX NOW has no courier at the door to collect cash, so it
+            // can't be chosen while cash on delivery is the payment method.
+            const isCodBlocked = method.id === "box_now" && paymentMethod === "cash_on_delivery";
+            const isDisabled = !method.available || isCodBlocked;
             return (
             <div
               key={method.id}
               className={`rounded-xl border px-4 py-3 ${
-                method.available ? "border-lavender-200 bg-paper-50" : "border-lavender-100 bg-paper-200/60"
+                isDisabled ? "border-lavender-100 bg-paper-200/60" : "border-lavender-200 bg-paper-50"
               }`}
             >
-              <label className={`flex items-center gap-3 ${method.available ? "cursor-pointer" : "cursor-not-allowed text-ink-700/60"}`}>
+              <label className={`flex items-center gap-3 ${isDisabled ? "cursor-not-allowed text-ink-700/60" : "cursor-pointer"}`}>
                 <input
                   type="radio"
                   value={method.id}
-                  disabled={!method.available}
+                  disabled={isDisabled}
                   className="shrink-0"
                   {...register("deliveryMethod")}
                 />
@@ -76,8 +134,10 @@ export function DeliveryAndPaymentStep({
                     {method.label}
                     {!method.available ? " (очаквайте скоро)" : null}
                   </span>
-                  <span className="block text-sm text-ink-700">{method.description}</span>
-                  {method.available ? (
+                  <span className="block text-sm text-ink-700">
+                    {isCodBlocked ? "Не е наличен при наложен платеж." : method.description}
+                  </span>
+                  {method.available && !isCodBlocked ? (
                     <span className="block text-sm text-ink-700">Очаквана доставка: {method.estimatedDays}</span>
                   ) : null}
                 </span>
@@ -108,7 +168,13 @@ export function DeliveryAndPaymentStep({
                       error={errors.speedyOfficeId?.message}
                     />
                   ) : (
-                    <AddressFields register={register} errors={errors} watch={watch} setValue={setValue} />
+                    <AddressFields
+                      register={register}
+                      errors={errors}
+                      watch={watch}
+                      setValue={setValue}
+                      addressLabel="Адрес за доставка"
+                    />
                   )}
                 </div>
               ) : null}
@@ -116,42 +182,6 @@ export function DeliveryAndPaymentStep({
             );
           })}
         </fieldset>
-      </div>
-
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-ink-900">Начин на плащане</h2>
-        <fieldset className="flex flex-col gap-3">
-          <legend className="sr-only">Начин на плащане</legend>
-          {paymentMethods.map((method) => {
-            const isCodUnavailable = method.id === "cash_on_delivery" && deliveryMethod === "box_now";
-            return (
-              <label
-                key={method.id}
-                className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
-                  isCodUnavailable
-                    ? "border-lavender-100 bg-paper-200/60 text-ink-700/60 cursor-not-allowed"
-                    : "border-lavender-200 bg-paper-50 cursor-pointer"
-                }`}
-              >
-                <input type="radio" value={method.id} disabled={isCodUnavailable} className="mt-1" {...register("paymentMethod")} />
-                <span>
-                  <span className="flex items-center gap-2 font-medium text-ink-900">
-                    {method.label}
-                    {method.id === "cash_on_delivery" && codFeeEur > 0 ? <Badge tone="neutral">+{codFeeEur.toFixed(2)} €</Badge> : null}
-                  </span>
-                  <span className="block text-sm text-ink-700">
-                    {isCodUnavailable ? "Наложен платеж не е наличен за доставка с BOX NOW." : method.description}
-                  </span>
-                </span>
-              </label>
-            );
-          })}
-        </fieldset>
-        {errors.paymentMethod?.message ? (
-          <p role="alert" className="text-sm text-burgundy-600">
-            {errors.paymentMethod.message}
-          </p>
-        ) : null}
       </div>
 
       {deliveryMethod === "box_now" && paymentMethod === "card_icard" ? (

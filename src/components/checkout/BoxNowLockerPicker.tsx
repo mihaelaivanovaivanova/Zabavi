@@ -1,20 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { useBoxNowLockers, type BoxNowLockerOption } from "@/lib/useBoxNowLockers";
 
 export interface BoxNowSelection {
   lockerId: string;
   addressLine1: string;
   postalCode: string;
-}
-
-interface BoxNowLockerOption {
-  id: string;
-  city: string;
-  addressLine1: string;
-  postalCode: string;
-  name: string;
 }
 
 interface BoxNowLockerPickerProps {
@@ -35,30 +28,11 @@ function lockerLabel(locker: BoxNowLockerOption): string {
  * Latin search text (see bgTransliteration.ts).
  */
 export function BoxNowLockerPicker({ selected, onSelect, error }: BoxNowLockerPickerProps) {
-  const [lockers, setLockers] = useState<BoxNowLockerOption[]>([]);
-  const [loadError, setLoadError] = useState(false);
+  const { lockers, loadError, isLoading } = useBoxNowLockers();
   // null means "not yet manually touched" — the city then falls back to
   // whichever locker is already selected (e.g. navigating back to this
   // step), derived at render time instead of synced in via an effect.
   const [cityOverride, setCityOverride] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/box-now/lockers")
-      .then((response) => {
-        if (!response.ok) throw new Error("failed to load lockers");
-        return response.json();
-      })
-      .then((data: { lockers: BoxNowLockerOption[] }) => {
-        if (!cancelled) setLockers(data.lockers);
-      })
-      .catch(() => {
-        if (!cancelled) setLoadError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const selectedLocker = lockers.find((locker) => locker.id === selected?.lockerId) ?? null;
   const city = cityOverride ?? selectedLocker?.city ?? "";
@@ -104,6 +78,7 @@ export function BoxNowLockerPicker({ selected, onSelect, error }: BoxNowLockerPi
           value={city}
           options={cityOptions}
           placeholder="Избери град"
+          isLoading={isLoading}
           onChange={(nextCity) => {
             setCityOverride(nextCity);
             onSelect(null);

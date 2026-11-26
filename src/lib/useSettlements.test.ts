@@ -50,4 +50,24 @@ describe("useSettlements", () => {
     await waitFor(() => expect(result.current.loadError).toBe(true));
     expect(result.current.settlements).toEqual([]);
   });
+
+  it("reports isLoading true until the fetch resolves, then false", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ settlements: SETTLEMENTS }), { status: 200 })));
+    const { useSettlements } = await import("@/lib/useSettlements");
+
+    const { result } = renderHook(() => useSettlements());
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+  });
+
+  it("reports isLoading false once the request has failed, instead of loading forever", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 500 })));
+    const { useSettlements } = await import("@/lib/useSettlements");
+
+    const { result } = renderHook(() => useSettlements());
+
+    await waitFor(() => expect(result.current.loadError).toBe(true));
+    expect(result.current.isLoading).toBe(false);
+  });
 });
