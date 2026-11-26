@@ -70,4 +70,18 @@ describe("useSettlements", () => {
     await waitFor(() => expect(result.current.loadError).toBe(true));
     expect(result.current.isLoading).toBe(false);
   });
+
+  it("treats a successful-but-empty response as a load error, not perpetual loading", async () => {
+    // The server's own getSettlements() falls back to [] (still a 200, not
+    // a failed response) if Speedy isn't configured there yet, or its own
+    // cache never warmed — isLoading must not stay true forever in that case.
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ settlements: [] }), { status: 200 })));
+    const { useSettlements } = await import("@/lib/useSettlements");
+
+    const { result } = renderHook(() => useSettlements());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.loadError).toBe(true);
+    expect(result.current.settlements).toEqual([]);
+  });
 });

@@ -117,4 +117,13 @@ describe("BoxNowLockerPicker", () => {
     expect(screen.getByRole("option", { name: "Варна" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("shows an error message (not a perpetual loading state) when the request succeeds with an empty list", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ lockers: [] }), { status: 200 })));
+    const { BoxNowLockerPicker } = await import("@/components/checkout/BoxNowLockerPicker");
+    render(<BoxNowLockerPicker selected={null} onSelect={() => {}} />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+    expect(screen.queryByText("Зареждане…")).not.toBeInTheDocument();
+  });
 });

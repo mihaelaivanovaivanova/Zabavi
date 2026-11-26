@@ -144,4 +144,15 @@ describe("SpeedyOfficePicker", () => {
     expect(screen.getByRole("option", { name: "Варна" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("shows an error message (not a perpetual loading state) when the settlements request succeeds with an empty list", async () => {
+    // e.g. the server's own getSettlements() falls back to [] with a 200,
+    // not a failed response, if Speedy isn't configured there yet.
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ settlements: [] }), { status: 200 })));
+    const { SpeedyOfficePicker } = await import("@/components/checkout/SpeedyOfficePicker");
+    render(<SpeedyOfficePicker type="office" selected={null} onSelect={() => {}} />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+    expect(screen.queryByText("Зареждане…")).not.toBeInTheDocument();
+  });
 });

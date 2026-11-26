@@ -40,6 +40,10 @@ function loadLockers(): Promise<BoxNowLockerOption[]> {
 export function useBoxNowLockers(): { lockers: BoxNowLockerOption[]; loadError: boolean; isLoading: boolean } {
   const [lockers, setLockers] = useState<BoxNowLockerOption[]>(cachedLockers ?? []);
   const [loadError, setLoadError] = useState(false);
+  // Tracked explicitly rather than derived from `lockers.length === 0` — a
+  // *successful* response could in principle still come back empty, and
+  // that must read as "done, no data" rather than "still loading" forever.
+  const [hasSettled, setHasSettled] = useState(cachedLockers !== null);
 
   useEffect(() => {
     if (cachedLockers) return;
@@ -47,19 +51,23 @@ export function useBoxNowLockers(): { lockers: BoxNowLockerOption[]; loadError: 
     let cancelled = false;
     loadLockers()
       .then((result) => {
-        if (!cancelled) setLockers(result);
+        if (cancelled) return;
+        setLockers(result);
+        // The real feed is never actually empty once a fetch truly
+        // succeeds (~900 rows) — treat a successful-but-empty response the
+        // same as a fetch failure rather than loading forever.
+        if (result.length === 0) setLoadError(true);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setHasSettled(true);
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // The real feed is never actually empty once it arrives (~900 rows) — so
-  // "nothing yet" reliably means "still in flight", not "no results".
-  const isLoading = lockers.length === 0 && !loadError;
-
-  return { lockers, loadError, isLoading };
+  return { lockers, loadError, isLoading: !hasSettled };
 }

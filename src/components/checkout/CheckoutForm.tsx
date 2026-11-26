@@ -18,6 +18,8 @@ import { resolveVariant } from "@/domain/kit/types";
 import { useCart } from "@/lib/CartContext";
 import { useKits } from "@/lib/useKits";
 import { usePricing } from "@/lib/usePricing";
+import { useSettlements } from "@/lib/useSettlements";
+import { useBoxNowLockers } from "@/lib/useBoxNowLockers";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -96,6 +98,17 @@ export function CheckoutForm() {
   const paymentMethod = watch("paymentMethod");
   const { kits } = useKits();
   const pricing = usePricing();
+  // Fired here, on mount of the whole wizard (step 1), rather than lazily
+  // inside SpeedyOfficePicker/AddressFields/BoxNowLockerPicker (step 2) —
+  // smisul.bg's own checkout starts these fetches the moment the checkout
+  // page loads for the same reason: by the time someone has filled in their
+  // name/phone/email and reached the delivery step, the ~5,300-row
+  // settlement list (and BOX NOW's own locations feed) has had that whole
+  // stretch of time to arrive, instead of only starting once the picker
+  // that needs it happens to mount. Both hooks share a page-lifetime cache
+  // (see useSettlements.ts/useBoxNowLockers.ts), so this is the only fetch.
+  useSettlements();
+  useBoxNowLockers();
   const activeKitPriceEur = kits.find((kit) => kit.variantId === variantId)?.priceEur ?? null;
   const resolvedVariants = product.variants.map((variant) =>
     resolveVariant(

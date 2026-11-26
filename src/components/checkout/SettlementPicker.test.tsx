@@ -57,6 +57,17 @@ describe("SettlementPicker", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
   });
 
+  it("shows an error message (not a perpetual loading state) when the request succeeds with an empty list", async () => {
+    // e.g. the server's own getSettlements() falls back to [] with a 200,
+    // not a failed response, if Speedy isn't configured there yet.
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ settlements: [] }), { status: 200 })));
+    const { SettlementPicker } = await import("@/components/checkout/SettlementPicker");
+    render(<SettlementPicker value="" onSelect={() => {}} />);
+
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+    expect(screen.queryByText("Зареждане…")).not.toBeInTheDocument();
+  });
+
   it("shows a loading message instead of 'no matches' while settlements are still being fetched", async () => {
     // A promise that never resolves during this test — simulates the field
     // being opened before the real (~5,300-row, a couple of seconds on a

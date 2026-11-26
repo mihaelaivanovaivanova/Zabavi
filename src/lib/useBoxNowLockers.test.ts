@@ -60,4 +60,15 @@ describe("useBoxNowLockers", () => {
     expect(result.current.isLoading).toBe(true);
     await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
+
+  it("treats a successful-but-empty response as a load error, not perpetual loading", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ lockers: [] }), { status: 200 })));
+    const { useBoxNowLockers } = await import("@/lib/useBoxNowLockers");
+
+    const { result } = renderHook(() => useBoxNowLockers());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.loadError).toBe(true);
+    expect(result.current.lockers).toEqual([]);
+  });
 });
