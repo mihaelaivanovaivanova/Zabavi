@@ -43,9 +43,9 @@ function fillStep1() {
   fireEvent.input(screen.getByLabelText("Имейл"), { target: { value: "ivan@example.com" } });
 }
 
-// Each picker's <select> is a sibling of its own search input within the
-// same wrapper div, so scoping to that wrapper avoids grabbing the other
-// picker's <select> when more than one is mounted at once.
+// Each native-<select>-based picker's <select> is a sibling of its own
+// search input within the same wrapper div, so scoping to that wrapper
+// avoids grabbing another picker's <select> when more than one is mounted.
 async function selectFromSiblingDropdown(searchInput: HTMLElement, value: string) {
   const wrapper = searchInput.closest("div");
   if (!wrapper) throw new Error("search input has no wrapper div");
@@ -57,10 +57,17 @@ async function selectFromSiblingDropdown(searchInput: HTMLElement, value: string
   fireEvent.change(select, { target: { value } });
 }
 
+// SearchableSelect (BOX NOW's city/locker cascade) opens its option list on
+// focus and selects via a plain button click, not a native <select>.
+async function selectFromSearchableSelect(labelText: string, optionName: string) {
+  fireEvent.focus(screen.getByLabelText(labelText));
+  const option = await screen.findByRole("option", { name: optionName });
+  fireEvent.click(option);
+}
+
 async function selectBoxNowLocker() {
-  const searchInput = screen.getByPlaceholderText("Търси по град, адрес или пощенски код…");
-  fireEvent.input(searchInput, { target: { value: "София" } });
-  await selectFromSiblingDropdown(searchInput, "LOCKER-1721");
+  await selectFromSearchableSelect("Град", "София");
+  await selectFromSearchableSelect("Автомат", "Тест локер — бул. Тест 1");
 }
 
 // box_now only ever pairs with card_icard (the other payment method, cash on
@@ -135,7 +142,7 @@ describe("CheckoutForm — wizard", () => {
     fillStep1();
 
     fireEvent.click(screen.getByRole("button", { name: "Напред" }));
-    await waitFor(() => expect(screen.getByText("Автомат BOX NOW")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText("Град")).toBeInTheDocument());
     await selectBoxNowLocker();
     await fillBoxNowBillingAddress();
 
@@ -177,7 +184,7 @@ describe("CheckoutForm — wizard", () => {
     fillStep1();
 
     fireEvent.click(screen.getByRole("button", { name: "Напред" }));
-    await waitFor(() => expect(screen.getByText("Автомат BOX NOW")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText("Град")).toBeInTheDocument());
     await selectBoxNowLocker();
     await fillBoxNowBillingAddress();
 

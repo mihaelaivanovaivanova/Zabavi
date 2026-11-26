@@ -11,6 +11,7 @@ export function CheckoutSummary({
   isCashOnDelivery,
   shippingPrices,
   codFeeEur,
+  isShippingKnown,
 }: {
   quantity: number;
   variantLabel?: string;
@@ -19,11 +20,14 @@ export function CheckoutSummary({
   isCashOnDelivery: boolean;
   shippingPrices: ShippingPrices | null;
   codFeeEur: number;
+  /** False on step 1, before the person has reached the delivery step — the shipping price depends on the method they haven't chosen yet, so it isn't shown or added to the total as "free". */
+  isShippingKnown: boolean;
 }) {
   const subtotalEur = priceEur !== null ? priceEur * quantity : null;
   const shippingEur = shippingPrices?.[deliveryMethod] ?? 0;
   const resolvedCodFeeEur = isCashOnDelivery ? codFeeEur : 0;
-  const totalEur = subtotalEur !== null ? subtotalEur + shippingEur + resolvedCodFeeEur : null;
+  const totalEur =
+    subtotalEur !== null ? subtotalEur + (isShippingKnown ? shippingEur : 0) + resolvedCodFeeEur : null;
 
   return (
     <div className="rounded-2xl border border-lavender-200 bg-lavender-50 p-6">
@@ -42,7 +46,9 @@ export function CheckoutSummary({
         </div>
         <div className="flex justify-between">
           <dt>Доставка</dt>
-          <dd>{shippingEur > 0 ? formatEur(shippingEur) : "Безплатна"}</dd>
+          <dd>
+            {!isShippingKnown ? "Изчислява се на следващата стъпка" : shippingEur > 0 ? formatEur(shippingEur) : "Безплатна"}
+          </dd>
         </div>
         {resolvedCodFeeEur > 0 ? (
           <div className="flex justify-between">

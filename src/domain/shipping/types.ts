@@ -20,6 +20,10 @@ export interface DeliveryMethod {
   description: string;
   /** false renders the option as "coming soon" and disables selection. */
   available: boolean;
+  /** e.g. "3-4 работни дни" — shown on the delivery-method card, same as smisul.bg's own `estimated_delivery`. */
+  estimatedDays: string;
+  /** The carrier's own real logo (see public/shipping/), sourced from their official sites — never a fabricated mark. */
+  logo: { src: string; alt: string };
 }
 
 export interface CourierShippingDetails {

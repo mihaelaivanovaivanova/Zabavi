@@ -39,7 +39,7 @@ export function PhoneField({
           id={registration.name}
           type="tel"
           className={`${inputClasses} flex-1`}
-          placeholder="08XXXXXXXX"
+          placeholder="08/09/07XXXXXXX"
           aria-invalid={Boolean(error)}
           {...registration}
         />

@@ -216,6 +216,7 @@ export function CheckoutForm() {
             watch={watch}
             setValue={setValue}
             codFeeEur={pricing.codFeeEur}
+            shippingPrices={pricing.shippingPrices}
           />
         ) : null}
 
@@ -257,6 +258,7 @@ export function CheckoutForm() {
           isCashOnDelivery={paymentMethod === "cash_on_delivery"}
           shippingPrices={pricing.shippingPrices}
           codFeeEur={pricing.codFeeEur}
+          isShippingKnown={step >= 2}
         />
       </div>
     </form>

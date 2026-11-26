@@ -187,30 +187,41 @@ export function getProductBySlug(slug: string): Product | undefined {
   return slug === product.slug ? product : undefined;
 }
 
+const BOX_NOW_LOGO = { src: "/shipping/box-now.svg", alt: "BOX NOW" };
+const SPEEDY_LOGO = { src: "/shipping/speedy.png", alt: "Speedy" };
+
 export const deliveryMethods: DeliveryMethod[] = [
   {
     id: "box_now",
     label: "BOX NOW",
     description: "Доставка до автомат на BOX NOW.",
     available: true,
+    estimatedDays: "3-4 работни дни",
+    logo: BOX_NOW_LOGO,
   },
   {
     id: "speedy_office",
     label: "Speedy",
     description: "Доставка до офис на Speedy.",
     available: true,
+    estimatedDays: "1-2 работни дни",
+    logo: SPEEDY_LOGO,
   },
   {
     id: "speedy_locker",
     label: "Speedy (автомат)",
     description: "Доставка до автомат на Speedy.",
     available: true,
+    estimatedDays: "1-2 работни дни",
+    logo: SPEEDY_LOGO,
   },
   {
     id: "courier",
     label: "Speedy (до адрес)",
     description: "Доставка до адрес с Speedy.",
     available: true,
+    estimatedDays: "1-2 работни дни",
+    logo: SPEEDY_LOGO,
   },
 ];
 

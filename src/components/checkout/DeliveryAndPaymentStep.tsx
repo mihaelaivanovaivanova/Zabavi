@@ -4,7 +4,9 @@ import { AddressFields } from "@/components/checkout/AddressFields";
 import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/BoxNowLockerPicker";
 import { SpeedyOfficePicker } from "@/components/checkout/SpeedyOfficePicker";
 import { deliveryMethods, paymentMethods } from "@/config/site";
+import { formatEur } from "@/lib/format";
 import type { CheckoutFormValues } from "@/lib/validation";
+import type { ShippingPrices } from "@/infrastructure/settings/shippingPricesService";
 
 export function DeliveryAndPaymentStep({
   register,
@@ -12,12 +14,14 @@ export function DeliveryAndPaymentStep({
   watch,
   setValue,
   codFeeEur,
+  shippingPrices,
 }: {
   register: UseFormRegister<CheckoutFormValues>;
   errors: FieldErrors<CheckoutFormValues>;
   watch: UseFormWatch<CheckoutFormValues>;
   setValue: UseFormSetValue<CheckoutFormValues>;
   codFeeEur: number;
+  shippingPrices: ShippingPrices | null;
 }) {
   const deliveryMethod = watch("deliveryMethod");
   const paymentMethod = watch("paymentMethod");
@@ -28,10 +32,10 @@ export function DeliveryAndPaymentStep({
   const speedyOfficeLabel = watch("speedyOfficeLabel");
   const speedyOfficeCity = watch("speedyOfficeCity");
 
-  function handleLockerSelect(selection: BoxNowSelection) {
-    setValue("boxNowLockerId", selection.lockerId, { shouldValidate: true });
-    setValue("boxNowLockerAddressLine1", selection.addressLine1);
-    setValue("boxNowLockerPostalCode", selection.postalCode);
+  function handleLockerSelect(selection: BoxNowSelection | null) {
+    setValue("boxNowLockerId", selection?.lockerId ?? "", { shouldValidate: true });
+    setValue("boxNowLockerAddressLine1", selection?.addressLine1 ?? "");
+    setValue("boxNowLockerPostalCode", selection?.postalCode ?? "");
   }
 
   function handleSpeedyOfficeSelect(selection: { officeId: string; officeLabel: string; city: string }) {
@@ -46,28 +50,38 @@ export function DeliveryAndPaymentStep({
         <h2 className="text-lg font-semibold text-ink-900">Начин на доставка</h2>
         <fieldset className="flex flex-col gap-3">
           <legend className="sr-only">Начин на доставка</legend>
-          {deliveryMethods.map((method) => (
+          {deliveryMethods.map((method) => {
+            const priceEur = shippingPrices?.[method.id] ?? 0;
+            return (
             <div
               key={method.id}
               className={`rounded-xl border px-4 py-3 ${
                 method.available ? "border-lavender-200 bg-paper-50" : "border-lavender-100 bg-paper-200/60"
               }`}
             >
-              <label className={`flex items-start gap-3 ${method.available ? "cursor-pointer" : "cursor-not-allowed text-ink-700/60"}`}>
+              <label className={`flex items-center gap-3 ${method.available ? "cursor-pointer" : "cursor-not-allowed text-ink-700/60"}`}>
                 <input
                   type="radio"
                   value={method.id}
                   disabled={!method.available}
-                  className="mt-1"
+                  className="shrink-0"
                   {...register("deliveryMethod")}
                 />
-                <span>
+                <span className="flex h-8 w-12 shrink-0 items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- real carrier logos, not an optimized remote image */}
+                  <img src={method.logo.src} alt={method.logo.alt} className="max-h-full max-w-full object-contain" />
+                </span>
+                <span className="min-w-0 flex-1">
                   <span className="block font-medium text-ink-900">
                     {method.label}
                     {!method.available ? " (очаквайте скоро)" : null}
                   </span>
                   <span className="block text-sm text-ink-700">{method.description}</span>
+                  {method.available ? (
+                    <span className="block text-sm text-ink-700">Очаквана доставка: {method.estimatedDays}</span>
+                  ) : null}
                 </span>
+                <span className="shrink-0 font-semibold text-ink-900">{formatEur(priceEur)}</span>
               </label>
 
               {deliveryMethod === method.id ? (
@@ -99,7 +113,8 @@ export function DeliveryAndPaymentStep({
                 </div>
               ) : null}
             </div>
-          ))}
+            );
+          })}
         </fieldset>
       </div>
 

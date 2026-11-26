@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { inputClasses } from "@/components/ui/Field";
 
 export interface SpeedyOfficeSelection {
@@ -77,10 +76,7 @@ export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOf
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-ink-800">{type === "office" ? "Офис на Speedy" : "Автомат на Speedy"}</span>
-        <Badge tone="neutral">Реални локации</Badge>
-      </div>
+      <span className="text-sm font-medium text-ink-800">{type === "office" ? "Офис на Speedy" : "Автомат на Speedy"}</span>
 
       <input
         type="text"
