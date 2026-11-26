@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { inputClasses } from "@/components/ui/Field";
+import { useEffect, useMemo, useState } from "react";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { useSettlements } from "@/lib/useSettlements";
 
 export interface SpeedyOfficeSelection {
   officeId: string;
@@ -17,112 +18,138 @@ interface SpeedyOfficeOption {
 }
 
 interface SpeedyOfficePickerProps {
-  /** Which of Speedy's two pickup-point kinds to search — a nationwide, unfiltered call is slow (~30s), so a city is required before searching either. */
+  /** Which of Speedy's two pickup-point kinds to search. */
   type: "office" | "locker";
   selected: SpeedyOfficeSelection | null;
-  onSelect: (selection: SpeedyOfficeSelection) => void;
+  onSelect: (selection: SpeedyOfficeSelection | null) => void;
   error?: string;
 }
 
-/** Real Speedy offices/automated machines, searched live by city — same role as `BoxNowLockerPicker.tsx` for BOX NOW. */
+function officeLabel(office: SpeedyOfficeOption): string {
+  return `${office.name} — ${office.address}`;
+}
+
+/**
+ * Two cascading dropdowns (city, then office/locker) — same shape as
+ * BoxNowLockerPicker.tsx's city/locker cascade. City options come from
+ * Bulgaria's full settlement nomenclature (bgTransliteration.ts gives
+ * bilingual search); the office/locker list is then fetched live from
+ * Speedy for just that city — a nationwide, unfiltered call is too slow
+ * (~30s) to offer up front.
+ */
 export function SpeedyOfficePicker({ type, selected, onSelect, error }: SpeedyOfficePickerProps) {
-  const [city, setCity] = useState(selected?.city ?? "");
+  const { settlements, loadError: settlementsError } = useSettlements();
+  // null means "not yet manually touched" — the city then falls back to
+  // whichever office is already selected (e.g. navigating back to this
+  // step), derived at render time instead of synced in via an effect.
+  const [cityOverride, setCityOverride] = useState<string | null>(null);
+  const city = cityOverride ?? selected?.city ?? "";
+
   const [offices, setOffices] = useState<SpeedyOfficeOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  const [officesError, setOfficesError] = useState(false);
 
   useEffect(() => {
-    const term = city.trim();
-    if (term.length < 2) {
-      // Nothing to clear: the render below only reads `offices` once
-      // `city.trim().length >= 2`, so a stale list from a longer, since-
-      // shortened query is never shown.
-      return;
-    }
+    // Nothing to fetch yet: the render below only reads `offices` once a
+    // city is chosen, so a stale list from a previous city is never shown.
+    if (!city) return;
 
     let cancelled = false;
-    const timeout = setTimeout(() => {
-      setIsLoading(true);
-      setLoadError(false);
-      fetch(`/api/shipping/speedy/offices?type=${type}&city=${encodeURIComponent(term)}`)
-        .then((response) => {
-          if (!response.ok) throw new Error("failed to load offices");
-          return response.json();
-        })
-        .then((data: { offices: SpeedyOfficeOption[] }) => {
-          if (!cancelled) setOffices(data.offices);
-        })
-        .catch(() => {
-          if (!cancelled) setLoadError(true);
-        })
-        .finally(() => {
-          if (!cancelled) setIsLoading(false);
-        });
-    }, 400);
+    // Deferred to a microtask so the initial "start loading" update doesn't
+    // set state synchronously within the effect body (matches the pattern
+    // used by CartContext.tsx's own hydration effect).
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        setIsLoading(true);
+        setOfficesError(false);
+      }
+    });
+    fetch(`/api/shipping/speedy/offices?type=${type}&city=${encodeURIComponent(city)}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("failed to load offices");
+        return response.json();
+      })
+      .then((data: { offices: SpeedyOfficeOption[] }) => {
+        if (!cancelled) setOffices(data.offices);
+      })
+      .catch(() => {
+        if (!cancelled) setOfficesError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
 
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
     };
   }, [city, type]);
 
-  const selectedOffice = offices.find((office) => office.id === selected?.officeId);
+  // Case-insensitive de-dup — Speedy's own search takes a plain city name,
+  // so distinct settlements sharing one (e.g. villages in different
+  // regions) collapse into a single entry here.
+  const cities = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const settlement of settlements) {
+      if (!settlement.name || seen.has(settlement.name.toLowerCase())) continue;
+      seen.set(settlement.name.toLowerCase(), settlement.name);
+    }
+    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "bg"));
+  }, [settlements]);
 
-  function handleSelectChange(id: string) {
-    const office = offices.find((candidate) => candidate.id === id);
-    if (!office) return;
-    onSelect({ officeId: office.id, officeLabel: `${office.name} — ${office.address}`, city: office.city });
+  const cityOptions = useMemo(() => cities.map((cityOption) => ({ value: cityOption, label: cityOption })), [cities]);
+  const officeOptions = useMemo(() => offices.map((office) => ({ value: office.id, label: officeLabel(office) })), [offices]);
+
+  if (settlementsError) {
+    return (
+      <p role="alert" className="text-sm text-burgundy-600">
+        Неуспешно зареждане на списъка с населени места. Опитай да презаредиш страницата.
+      </p>
+    );
   }
 
   return (
-    <div className="space-y-3">
-      <span className="text-sm font-medium text-ink-800">{type === "office" ? "Офис на Speedy" : "Автомат на Speedy"}</span>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-ink-800" htmlFor={`speedy-${type}-city`}>
+          Град
+        </label>
+        <SearchableSelect
+          id={`speedy-${type}-city`}
+          value={city}
+          options={cityOptions}
+          placeholder="Избери град"
+          onChange={(nextCity) => {
+            setCityOverride(nextCity);
+            onSelect(null);
+          }}
+        />
+      </div>
 
-      <input
-        type="text"
-        className={inputClasses}
-        placeholder="Избери град…"
-        value={city}
-        onChange={(event) => setCity(event.target.value)}
-      />
-
-      {loadError ? (
-        <p role="alert" className="text-sm text-burgundy-600">
-          Неуспешно зареждане на локациите на Speedy. Опитай отново.
-        </p>
-      ) : city.trim().length < 2 ? (
-        <p className="text-sm text-ink-700">Въведи поне 2 букви от града.</p>
-      ) : isLoading ? (
-        <p className="text-sm text-ink-700">Зареждане…</p>
-      ) : (
-        <select
-          className={inputClasses}
-          size={Math.min(Math.max(offices.length, 1), 8)}
-          value={selected?.officeId ?? ""}
-          onChange={(event) => handleSelectChange(event.target.value)}
-        >
-          {offices.length === 0 ? (
-            <option disabled>Няма намерени {type === "office" ? "офиси" : "автомати"} за &quot;{city}&quot;</option>
-          ) : (
-            offices.map((office) => (
-              <option key={office.id} value={office.id}>
-                {office.name} — {office.address}
-              </option>
-            ))
-          )}
-        </select>
-      )}
-
-      {selectedOffice ? (
-        <p className="text-sm text-ink-700">
-          Избрано: {selectedOffice.name} — {selectedOffice.address}
-        </p>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-burgundy-600">
-          {error}
-        </p>
-      ) : null}
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-ink-800" htmlFor={`speedy-${type}-office`}>
+          {type === "office" ? "Офис" : "Автомат"}
+        </label>
+        {officesError ? (
+          <p role="alert" className="text-sm text-burgundy-600">
+            Неуспешно зареждане на локациите на Speedy. Опитай отново.
+          </p>
+        ) : isLoading ? (
+          <p className="text-sm text-ink-700">Зареждане…</p>
+        ) : (
+          <SearchableSelect
+            id={`speedy-${type}-office`}
+            value={selected?.officeId ?? ""}
+            options={officeOptions}
+            placeholder={type === "office" ? "Избери офис" : "Избери автомат"}
+            disabled={!city}
+            error={error}
+            onChange={(officeId) => {
+              const office = offices.find((candidate) => candidate.id === officeId);
+              if (office) onSelect({ officeId: office.id, officeLabel: officeLabel(office), city: office.city });
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

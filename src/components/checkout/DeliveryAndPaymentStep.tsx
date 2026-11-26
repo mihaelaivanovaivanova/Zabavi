@@ -38,10 +38,10 @@ export function DeliveryAndPaymentStep({
     setValue("boxNowLockerPostalCode", selection?.postalCode ?? "");
   }
 
-  function handleSpeedyOfficeSelect(selection: { officeId: string; officeLabel: string; city: string }) {
-    setValue("speedyOfficeId", selection.officeId, { shouldValidate: true });
-    setValue("speedyOfficeLabel", selection.officeLabel);
-    setValue("speedyOfficeCity", selection.city);
+  function handleSpeedyOfficeSelect(selection: { officeId: string; officeLabel: string; city: string } | null) {
+    setValue("speedyOfficeId", selection?.officeId ?? "", { shouldValidate: true });
+    setValue("speedyOfficeLabel", selection?.officeLabel ?? "");
+    setValue("speedyOfficeCity", selection?.city ?? "");
   }
 
   return (
