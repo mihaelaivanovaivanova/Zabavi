@@ -9,7 +9,9 @@ const order: OrderDraft = {
   shippingDetails: { method: "courier", address: "ул. Примерна 1", city: "София", postalCode: "1000" },
   items: [{ productSlug: "akvarelen-nabor", variantId: "standard", quantity: 1 }],
   paymentMethod: "cash_on_delivery",
-  status: "pending",
+  status: "awaiting_payment",
+  totalEur: 25.5,
+  statusHistory: [],
   createdAt: new Date().toISOString(),
 };
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { notificationIdempotencyStore } from "@/infrastructure/payments/notificationIdempotency";
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
+import { InvalidOrderStatusTransitionError, transitionOrderStatus } from "@/domain/order/orderStatusService";
 import type { ShipmentTrackingEvent } from "@/domain/order/types";
 
 /**
@@ -66,12 +67,26 @@ export async function POST(request: Request) {
     occurredAt: data.time ?? new Date().toISOString(),
   };
   order.shipmentEvents = [...(order.shipmentEvents ?? []), trackingEvent];
+  await orderRepository.save(order);
 
   if (data.event === "Cancelled" || data.event === "Cancelled-return") {
-    order.status = "cancelled";
+    // Only ever through the shared status service — never a direct write —
+    // so this still validates the move and fires the cancelled email. Not
+    // every order is in a cancellable state when this fires (e.g. already
+    // delivered); that's logged and otherwise ignored rather than failing
+    // the webhook, since BOX NOW doesn't care whether our own status model
+    // accepted the move.
+    try {
+      await transitionOrderStatus(order, "cancelled", `BOX NOW: ${data.event}`);
+    } catch (error) {
+      if (!(error instanceof InvalidOrderStatusTransitionError)) throw error;
+      console.warn("BOX NOW webhook reported a cancellation that doesn't fit the order's current status.", {
+        orderId: order.id,
+        status: order.status,
+      });
+    }
   }
 
-  await orderRepository.save(order);
   await notificationIdempotencyStore.markProcessed(idempotencyKey);
 
   return NextResponse.json({ received: true });

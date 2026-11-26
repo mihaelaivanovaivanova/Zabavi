@@ -12,6 +12,8 @@ export function SpeedySettingsForm({ initial }: { initial: SpeedySettingsPublic 
   const [apiUrl, setApiUrl] = useState(initial.apiUrl);
   const [username, setUsername] = useState(initial.username);
   const [password, setPassword] = useState("");
+  const [dropoffOfficeId, setDropoffOfficeId] = useState(initial.dropoffOfficeId);
+  const [serviceId, setServiceId] = useState(initial.serviceId);
   const [passwordConfigured, setPasswordConfigured] = useState(initial.passwordConfigured);
   const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
 
@@ -26,6 +28,8 @@ export function SpeedySettingsForm({ initial }: { initial: SpeedySettingsPublic 
         enabled,
         apiUrl,
         username,
+        dropoffOfficeId,
+        serviceId,
         ...(password ? { password } : {}),
       }),
     });
@@ -57,8 +61,7 @@ export function SpeedySettingsForm({ initial }: { initial: SpeedySettingsPublic 
       </div>
 
       <p className="text-sm text-ink-700">
-        Само съхранение на достъп — куриерският метод в сайта все още използва демо изпращане. Реална интеграция със
-        Спиди API предстои да бъде изградена отделно.
+        Куриерският метод в сайта създава реална пратка през Спиди Web API веднага щом тук е зададено и активно.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -71,7 +74,22 @@ export function SpeedySettingsForm({ initial }: { initial: SpeedySettingsPublic 
           onChange={(e) => setPassword(e.target.value)}
           placeholder={passwordConfigured ? "Зададена — остави празно, за да запазиш текущата" : "Парола"}
         />
+        <InputField
+          label="ID на офис за предаване (dropoff)"
+          value={dropoffOfficeId}
+          onChange={(e) => setDropoffOfficeId(e.target.value)}
+        />
+        <InputField
+          label="Service ID"
+          value={serviceId}
+          onChange={(e) => setServiceId(e.target.value)}
+          placeholder="505"
+        />
       </div>
+      <p className="text-xs text-ink-700">
+        Service ID по подразбиране е 505 (стандартна куриерска услуга) — провери в своя профил в Спиди, защото е
+        специфичен за акаунта.
+      </p>
 
       {saveState.status === "error" ? (
         <p role="alert" className="text-sm text-burgundy-600">

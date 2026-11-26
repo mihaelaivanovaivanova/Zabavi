@@ -2,8 +2,10 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { getBoxNowSettingsForAdmin } from "@/infrastructure/settings/boxNowSettingsService";
 import { getSpeedySettingsForAdmin } from "@/infrastructure/settings/speedySettingsService";
+import { getCodFeeEur } from "@/infrastructure/settings/checkoutSettingsService";
 import { BoxNowSettingsForm } from "@/components/admin/BoxNowSettingsForm";
 import { SpeedySettingsForm } from "@/components/admin/SpeedySettingsForm";
+import { CodFeeSettingsForm } from "@/components/admin/CodFeeSettingsForm";
 import { SettingsNav } from "@/components/admin/SettingsNav";
 
 export default function ShippingSettingsPage() {
@@ -23,12 +25,17 @@ export default function ShippingSettingsPage() {
 
 async function ShippingSettingsSections() {
   await connection();
-  const [boxNow, speedy] = await Promise.all([getBoxNowSettingsForAdmin(), getSpeedySettingsForAdmin()]);
+  const [boxNow, speedy, codFeeEur] = await Promise.all([
+    getBoxNowSettingsForAdmin(),
+    getSpeedySettingsForAdmin(),
+    getCodFeeEur(),
+  ]);
 
   return (
     <div className="mt-8 space-y-8">
       <BoxNowSettingsForm initial={boxNow} />
       <SpeedySettingsForm initial={speedy} />
+      <CodFeeSettingsForm initial={{ codFeeEur }} />
     </div>
   );
 }

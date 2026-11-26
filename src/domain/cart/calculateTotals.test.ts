@@ -1,17 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { calculateTotals } from "@/domain/cart/calculateTotals";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("calculateTotals", () => {
   it("returns unconfirmed totals for an empty cart", async () => {
     const result = await calculateTotals([]);
-    expect(result).toEqual({ subtotalEur: null, shippingEur: null, totalEur: null, isPriceConfirmed: false });
+    expect(result).toEqual({ subtotalEur: null, shippingEur: null, codFeeEur: null, totalEur: null, isPriceConfirmed: false });
   });
 
   it("returns unconfirmed totals when the kit price is still TBD", async () => {
     const lookup = () => null;
     const result = await calculateTotals(
       [{ productSlug: "test-product", variantId: "standard", quantity: 1 }],
-      lookup,
+      { priceLookup: lookup },
     );
     expect(result.isPriceConfirmed).toBe(false);
     expect(result.totalEur).toBeNull();
@@ -19,7 +23,9 @@ describe("calculateTotals", () => {
 
   it("returns unconfirmed totals when the product cannot be found", async () => {
     const lookup = () => null;
-    const result = await calculateTotals([{ productSlug: "missing", variantId: "standard", quantity: 1 }], lookup);
+    const result = await calculateTotals([{ productSlug: "missing", variantId: "standard", quantity: 1 }], {
+      priceLookup: lookup,
+    });
     expect(result.isPriceConfirmed).toBe(false);
   });
 
@@ -27,8 +33,25 @@ describe("calculateTotals", () => {
     const lookup = () => 25;
     const result = await calculateTotals(
       [{ productSlug: "test-product", variantId: "standard", quantity: 3 }],
-      lookup,
+      { priceLookup: lookup },
     );
-    expect(result).toEqual({ subtotalEur: 75, shippingEur: 0, totalEur: 75, isPriceConfirmed: true });
+    expect(result).toEqual({ subtotalEur: 75, shippingEur: 0, codFeeEur: 0, totalEur: 75, isPriceConfirmed: true });
+  });
+
+  it("folds the cash-on-delivery fee into the total only for that payment method", async () => {
+    vi.stubEnv("COD_FEE_EUR", "0.75");
+    const lookup = () => 25;
+
+    const cod = await calculateTotals([{ productSlug: "test-product", variantId: "standard", quantity: 1 }], {
+      priceLookup: lookup,
+      paymentMethod: "cash_on_delivery",
+    });
+    expect(cod).toEqual({ subtotalEur: 25, shippingEur: 0, codFeeEur: 0.75, totalEur: 25.75, isPriceConfirmed: true });
+
+    const card = await calculateTotals([{ productSlug: "test-product", variantId: "standard", quantity: 1 }], {
+      priceLookup: lookup,
+      paymentMethod: "card_icard",
+    });
+    expect(card).toEqual({ subtotalEur: 25, shippingEur: 0, codFeeEur: 0, totalEur: 25, isPriceConfirmed: true });
   });
 });

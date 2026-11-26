@@ -65,6 +65,12 @@ export class PostgresOrderRepository implements OrderRepository {
     const result = await pool.query<{ payload: unknown }>("SELECT payload FROM orders ORDER BY created_at DESC");
     return result.rows.map((row) => rowToOrder(row.payload));
   }
+
+  async delete(id: string): Promise<void> {
+    const pool = getPool();
+    await ensureSchema(pool);
+    await pool.query("DELETE FROM orders WHERE id = $1", [id]);
+  }
 }
 
 export { isPostgresConfigured };

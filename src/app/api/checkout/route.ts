@@ -4,13 +4,17 @@ import { checkoutSchema } from "@/lib/validation";
 import { getClientIp } from "@/lib/http";
 import { generateOrderNumber } from "@/lib/orderNumber";
 import { calculateTotals } from "@/domain/cart/calculateTotals";
+import { transitionOrderStatus } from "@/domain/order/orderStatusService";
 import { getPaymentProvider } from "@/infrastructure/payments/getPaymentProvider";
-import { getShippingProvider } from "@/infrastructure/shipping/getShippingProvider";
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
 import { product } from "@/config/site";
 import type { OrderDraft } from "@/domain/order/types";
 import { PaymentProviderError } from "@/domain/payment/types";
-import { ShippingProviderError, type ShippingDetails } from "@/domain/shipping/types";
+import { InvalidOrderStatusTransitionError } from "@/domain/order/orderStatusService";
+import type { ShippingDetails } from "@/domain/shipping/types";
+
+const CARD_AWAITING_PAYMENT_NOTICE =
+  "Плащането предстои — пратката ще бъде заявена автоматично веднага щом плащането с карта бъде потвърдено.";
 
 /**
  * Demo checkout endpoint. Validates on the server, recomputes totals from
@@ -18,6 +22,12 @@ import { ShippingProviderError, type ShippingDetails } from "@/domain/shipping/t
  * a clearly labeled demo result unless a real payment/shipping provider is
  * configured. No real payment or shipment is ever created silently — a
  * real provider failure is surfaced as an error, never masked as success.
+ *
+ * The real shipment and the confirmation/admin-notification emails are
+ * deliberately NOT created here for a card order — only once the iCard
+ * webhook actually confirms payment (see `webhooks/icard/route.ts`), via
+ * `transitionOrderStatus`. A cash-on-delivery order has nothing to wait
+ * for, so it's confirmed (and its shipment/emails triggered) immediately.
  */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -32,9 +42,10 @@ export async function POST(request: Request) {
 
   const values = parsed.data;
 
-  const totals = await calculateTotals([
-    { productSlug: product.slug, variantId: values.variantId, quantity: values.quantity },
-  ]);
+  const totals = await calculateTotals(
+    [{ productSlug: product.slug, variantId: values.variantId, quantity: values.quantity }],
+    { paymentMethod: values.paymentMethod },
+  );
 
   const shippingDetails: ShippingDetails =
     values.deliveryMethod === "box_now"
@@ -65,7 +76,10 @@ export async function POST(request: Request) {
     giftMessage: values.giftMessage,
     items: [{ productSlug: product.slug, variantId: values.variantId, quantity: values.quantity }],
     paymentMethod: values.paymentMethod,
-    status: "pending",
+    status: "awaiting_payment",
+    totalEur: totals.totalEur,
+    totalsSnapshot: { subtotalEur: totals.subtotalEur, shippingEur: totals.shippingEur, codFeeEur: totals.codFeeEur },
+    statusHistory: [{ status: "awaiting_payment", previousStatus: null, note: null, occurredAt: createdAt.toISOString() }],
     createdAt: createdAt.toISOString(),
   };
 
@@ -81,28 +95,33 @@ export async function POST(request: Request) {
   }
   order.paymentStatus = paymentResult.status;
 
-  const shippingProvider = await getShippingProvider(values.deliveryMethod);
-  let shippingResult;
-  try {
-    shippingResult = await shippingProvider.createShipment(order);
-  } catch (error) {
-    if (error instanceof ShippingProviderError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 502 });
-    }
-    throw error;
-  }
+  let shippingNotice = CARD_AWAITING_PAYMENT_NOTICE;
+  let shippingIsLive = false;
 
-  await orderRepository.save(order);
+  if (values.paymentMethod === "cash_on_delivery") {
+    try {
+      const { shipmentResult } = await transitionOrderStatus(order, "confirmed", "Избран е наложен платеж.");
+      shippingNotice = shipmentResult?.notice ?? "Поръчката е потвърдена; пратката предстои да бъде заявена.";
+      shippingIsLive = shipmentResult?.isLive ?? false;
+    } catch (error) {
+      if (error instanceof InvalidOrderStatusTransitionError) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      }
+      throw error;
+    }
+  } else {
+    await orderRepository.save(order);
+  }
 
   return NextResponse.json({
     success: true,
     demo: true,
-    shippingIsLive: shippingResult.isLive,
+    shippingIsLive,
     paymentIsLive: paymentResult.isLive,
     orderId: order.id,
     totals,
     paymentNotice: paymentResult.notice,
     paymentWidgetToken: paymentResult.widgetToken,
-    shippingNotice: shippingResult.notice,
+    shippingNotice,
   });
 }

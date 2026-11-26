@@ -6,16 +6,11 @@ import { orderRepository } from "@/infrastructure/repositories/orderRepository";
 import { reviewRepository } from "@/infrastructure/repositories/reviewRepository";
 import { createReviewConfirmationToken, isReviewConfirmationConfigured } from "@/lib/reviewConfirmationToken";
 
-/** "Delivered" matches the BOX NOW webhook's raw event name — see `ShipmentTrackingEvent` in `@/domain/order/types`. */
-const DELIVERED_EVENT = "Delivered";
-
 export async function hasDeliveredOrderForEmail(email: string): Promise<boolean> {
   const normalized = email.trim().toLowerCase();
   const orders = await orderRepository.findAll();
   return orders.some(
-    (order) =>
-      order.customer.email?.trim().toLowerCase() === normalized &&
-      order.shipmentEvents?.some((event) => event.event === DELIVERED_EVENT),
+    (order) => order.customer.email?.trim().toLowerCase() === normalized && order.status === "delivered",
   );
 }
 

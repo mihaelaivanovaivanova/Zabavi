@@ -1,4 +1,4 @@
-import { ShippingProviderError } from "@/domain/shipping/types";
+import { ShippingProviderError, type ShipmentStatus } from "@/domain/shipping/types";
 import { getBoxNowSettings, isBoxNowConfigured } from "@/infrastructure/settings/boxNowSettingsService";
 
 /**
@@ -133,4 +133,126 @@ export async function createBoxNowDeliveryRequest(
 
   const body = (await response.json()) as { referenceNumber: string; parcels: { id: string }[] };
   return { referenceNumber: body.referenceNumber, parcelIds: body.parcels.map((p) => p.id) };
+}
+
+async function authHeaders(config: BoxNowApiConfig): Promise<Record<string, string>> {
+  const accessToken = await getAccessToken(config);
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    ...(config.partnerId ? { "X-PartnerID": config.partnerId } : {}),
+  };
+}
+
+/**
+ * BOX NOW's own state vocabulary (Partner API manual §4.5), ported from
+ * `BoxNowShippingProvider::mapStatus()`. "final-destination" means the
+ * parcel reached its destination locker and is waiting for pickup — there's
+ * no courier-to-door leg for a locker network, so it maps to
+ * `ready_for_pickup`, not `out_for_delivery`.
+ */
+function mapBoxNowStatus(rawStatus: string): ShipmentStatus {
+  switch (rawStatus) {
+    case "new":
+      return "accepted";
+    case "in-transit":
+    case "in-depot":
+    case "wait-for-load":
+      return "in_transit";
+    case "final-destination":
+      return "ready_for_pickup";
+    case "delivered":
+      return "delivered";
+    case "returned":
+    case "cancelled-return":
+    case "expired-return":
+      return "returned";
+    case "cancelled":
+    case "canceled":
+    case "lost":
+    case "missing":
+      return "failed";
+    default:
+      return "pending";
+  }
+}
+
+export interface BoxNowTrackingEvent {
+  status: ShipmentStatus;
+  description: string | null;
+  occurredAt: string;
+}
+
+export interface BoxNowTrackingResult {
+  currentStatus: ShipmentStatus;
+  events: BoxNowTrackingEvent[];
+}
+
+/** `GET parcels?parcelId=...` — per the Partner API manual's parcel-lookup endpoint. */
+export async function trackBoxNowParcel(trackingNumber: string): Promise<BoxNowTrackingResult> {
+  const config = await readConfig();
+  if (!config) {
+    throw new ShippingProviderError("BOX NOW Partner API credentials are not configured.");
+  }
+
+  const headers = await authHeaders(config);
+  const response = await fetch(`${config.apiUrl}/api/v1/parcels?parcelId=${encodeURIComponent(trackingNumber)}`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new ShippingProviderError(`BOX NOW parcels lookup failed with status ${response.status}`);
+  }
+
+  const body = (await response.json()) as {
+    data?: { state?: string; events?: { type: string; locationDisplayName?: string; createTime: string }[] }[];
+  };
+  const parcel = body.data?.[0];
+  if (!parcel) {
+    throw new ShippingProviderError("BOX NOW parcel not found.");
+  }
+
+  const events: BoxNowTrackingEvent[] = (parcel.events ?? []).map((event) => ({
+    status: mapBoxNowStatus(event.type),
+    description: event.locationDisplayName ?? null,
+    occurredAt: new Date(event.createTime).toISOString(),
+  }));
+
+  return { currentStatus: mapBoxNowStatus(parcel.state ?? "new"), events };
+}
+
+/** `GET parcels/{id}/label.pdf` — raw PDF body, per the Partner API manual. */
+export async function fetchBoxNowLabel(trackingNumber: string): Promise<ArrayBuffer> {
+  const config = await readConfig();
+  if (!config) {
+    throw new ShippingProviderError("BOX NOW Partner API credentials are not configured.");
+  }
+
+  const headers = await authHeaders(config);
+  const response = await fetch(`${config.apiUrl}/api/v1/parcels/${encodeURIComponent(trackingNumber)}/label.pdf`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new ShippingProviderError(`BOX NOW label fetch failed with status ${response.status}`);
+  }
+
+  return response.arrayBuffer();
+}
+
+/** `POST parcels/{id}:cancel` — a colon-suffixed action endpoint, no request body; `reason` is accepted for API symmetry with Speedy but unused, since BOX NOW's cancel endpoint takes none. */
+export async function cancelBoxNowParcel(trackingNumber: string, _reason?: string | null): Promise<void> {
+  const config = await readConfig();
+  if (!config) {
+    throw new ShippingProviderError("BOX NOW Partner API credentials are not configured.");
+  }
+
+  const headers = await authHeaders(config);
+  const response = await fetch(
+    `${config.apiUrl}/api/v1/parcels/${encodeURIComponent(trackingNumber)}:cancel`,
+    { method: "POST", headers },
+  );
+
+  if (!response.ok) {
+    throw new ShippingProviderError(`BOX NOW cancel failed with status ${response.status}`);
+  }
 }

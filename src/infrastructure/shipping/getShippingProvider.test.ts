@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getShippingProvider } from "@/infrastructure/shipping/getShippingProvider";
 import { BoxNowApiProvider } from "@/infrastructure/shipping/boxNowApiProvider";
+import { SpeedyApiProvider } from "@/infrastructure/shipping/speedyApiProvider";
 import type { OrderDraft } from "@/domain/order/types";
 
 function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
@@ -10,7 +11,9 @@ function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
     shippingDetails: { method: "courier", address: "ул. Примерна 1", city: "София", postalCode: "1000" },
     items: [{ productSlug: "akvarelen-nabor", variantId: "standard", quantity: 1 }],
     paymentMethod: "cash_on_delivery",
-    status: "pending",
+    status: "awaiting_payment",
+    totalEur: 25.5,
+    statusHistory: [],
     createdAt: new Date().toISOString(),
     ...overrides,
   };
@@ -47,6 +50,16 @@ describe("getShippingProvider", () => {
     vi.stubEnv("BOXNOW_ORIGIN_CONTACT_NUMBER", "+359888000000");
 
     expect(await getShippingProvider("box_now")).toBeInstanceOf(BoxNowApiProvider);
+  });
+
+  it("switches to the real Speedy API provider once credentials are configured", async () => {
+    vi.stubEnv("SPEEDY_ENABLED", "true");
+    vi.stubEnv("SPEEDY_API_URL", "https://api.speedy.bg/v1");
+    vi.stubEnv("SPEEDY_USERNAME", "zabavi-test");
+    vi.stubEnv("SPEEDY_PASSWORD", "test-password");
+    vi.stubEnv("SPEEDY_DROPOFF_OFFICE_ID", "123");
+
+    expect(await getShippingProvider("courier")).toBeInstanceOf(SpeedyApiProvider);
   });
 });
 

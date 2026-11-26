@@ -6,6 +6,8 @@ const updateSchema = z.object({
   enabled: z.boolean(),
   apiUrl: z.string().trim(),
   username: z.string().trim(),
+  dropoffOfficeId: z.string().trim(),
+  serviceId: z.string().trim(),
   password: z.string().optional(),
 });
 

@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { OrderDraft, OrderStatus } from "@/domain/order/types";
 import type { DeliveryMethodId } from "@/domain/shipping/types";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { inputClasses } from "@/components/ui/Field";
 import { StatTile } from "@/components/admin/StatTile";
-import { computeOrderStats, isDueForReminder, latestShipmentEvent } from "@/lib/orderStats";
+import { computeOrderStats, isDueForReminder, latestShipmentEvent, orderDisplayStatus } from "@/lib/orderStats";
 import { formatEur } from "@/lib/format";
 
 type StatusFilter = "all" | OrderStatus;
@@ -48,7 +50,7 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
       if (toMs !== null && createdMs > toMs) return false;
 
       if (query) {
-        const tracking = latestShipmentEvent(order)?.parcelId ?? "";
+        const tracking = order.trackingNumber ?? latestShipmentEvent(order)?.parcelId ?? "";
         const haystack = [
           orderDisplayNumber(order),
           order.id,
@@ -84,16 +86,25 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatTile label="Общо поръчки" value={String(stats.total)} />
         <StatTile label="Днес" value={String(stats.today)} />
-        <StatTile label="Чакащи" value={String(stats.pending)} />
         <StatTile
           label="За напомняне"
           value={String(stats.dueForReminder)}
-          hint="Чакащи повече от 24ч"
+          hint="Очакват плащане повече от 24ч"
         />
-        <StatTile label="Потвърдени" value={String(stats.confirmed)} />
-        <StatTile label="Отказани" value={String(stats.cancelled)} />
+        <StatTile label="Очакват плащане" value={String(stats.statusCounts.awaiting_payment)} />
+        <StatTile label="Потвърдени" value={String(stats.statusCounts.paid + stats.statusCounts.confirmed)} />
+        <StatTile label="Изпратени" value={String(stats.statusCounts.shipped)} />
+        <StatTile label="Доставени" value={String(stats.statusCounts.delivered)} />
+        <StatTile
+          label="Отказани/неуспешни"
+          value={String(stats.statusCounts.cancelled + stats.statusCounts.failed + stats.statusCounts.returned)}
+        />
         <StatTile label="Уникални клиенти" value={String(stats.uniqueCustomers)} />
-        <StatTile label="Обща сума" value={formatEur(null)} hint="Цената предстои да се зададе" />
+        <StatTile
+          label="Обща сума"
+          value={formatEur(stats.totalRevenueEur)}
+          hint={stats.totalRevenueEur === null ? "Цената предстои да се зададе" : "Без отказаните поръчки"}
+        />
       </div>
 
       <div className="mt-10 flex items-center justify-between gap-4">
@@ -117,9 +128,16 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
           className={inputClasses}
         >
           <option value="all">Всички статуси</option>
-          <option value="pending">Чакащи</option>
-          <option value="confirmed">Потвърдени</option>
-          <option value="cancelled">Отказани</option>
+          <option value="awaiting_payment">Очаква плащане</option>
+          <option value="paid">Платена</option>
+          <option value="confirmed">Потвърдена</option>
+          <option value="packed">Опакована</option>
+          <option value="shipped">Изпратена</option>
+          <option value="delivered">Доставена</option>
+          <option value="returned">Върната</option>
+          <option value="cancelled">Отказана</option>
+          <option value="refunded">Възстановена</option>
+          <option value="failed">Неуспешна</option>
         </select>
         <select
           value={deliveryFilter}
@@ -181,39 +199,47 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
                 <th className="px-4 py-3">Статус</th>
                 <th className="px-4 py-3">Подадена</th>
                 <th className="px-4 py-3">Артикули</th>
-                <th className="px-4 py-3">Проследяване</th>
+                <th className="px-4 py-3">Проследяване №</th>
                 <th className="px-4 py-3">Сума</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-t border-lavender-200">
-                  <td className="px-4 py-3 font-medium text-ink-900">
-                    {orderDisplayNumber(order)}
-                    {isDueForReminder(order) ? (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-accent-400/15 px-2 py-0.5 text-xs font-semibold text-accent-600">
-                        напомняне
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 text-ink-700">
-                    {order.customer.fullName}
-                    <span className="block text-xs text-ink-700">{order.customer.phone}</span>
-                  </td>
-                  <td className="px-4 py-3 text-ink-700">{order.status}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-ink-700">
-                    {new Date(order.createdAt).toLocaleString("bg-BG")}
-                  </td>
-                  <td className="px-4 py-3 text-ink-700">
-                    {order.items.map((item) => `${item.variantId} × ${item.quantity}`).join(", ")}
-                  </td>
-                  <td className="px-4 py-3 text-ink-700">
-                    {order.shippingDetails.method}
-                    {latestShipmentEvent(order) ? ` — ${latestShipmentEvent(order)?.event}` : ""}
-                  </td>
-                  <td className="px-4 py-3 text-ink-700">{formatEur(null)}</td>
-                </tr>
-              ))}
+              {filteredOrders.map((order) => {
+                const displayStatus = orderDisplayStatus(order);
+                return (
+                  <tr key={order.id} className="border-t border-lavender-200">
+                    <td className="px-4 py-3 font-medium text-ink-900">
+                      {orderDisplayNumber(order)}
+                      {isDueForReminder(order) ? (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-accent-400/15 px-2 py-0.5 text-xs font-semibold text-accent-600">
+                          напомняне
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-ink-700">
+                      {order.customer.fullName}
+                      <span className="block text-xs text-ink-700">{order.customer.phone}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge tone={displayStatus.tone}>{displayStatus.label}</Badge>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-ink-700">
+                      {new Date(order.createdAt).toLocaleString("bg-BG")}
+                    </td>
+                    <td className="px-4 py-3 text-ink-700">
+                      {order.items.map((item) => `${item.variantId} × ${item.quantity}`).join(", ")}
+                    </td>
+                    <td className="px-4 py-3 text-ink-700">{order.trackingNumber ?? "—"}</td>
+                    <td className="px-4 py-3 text-ink-700">{formatEur(order.totalEur ?? null)}</td>
+                    <td className="px-4 py-3">
+                      <Link href={`/admin/orders/${order.id}`} className="text-burgundy-700 underline">
+                        Преглед
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

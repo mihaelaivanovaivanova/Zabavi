@@ -9,7 +9,9 @@ function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
     shippingDetails: { method: "box_now", lockerId: "LOCKER-42", addressLine1: "ул. Тест 5", postalCode: "1000" },
     items: [{ productSlug: "akvarelen-nabor", variantId: "standard", quantity: 1 }],
     paymentMethod: "cash_on_delivery",
-    status: "pending",
+    status: "awaiting_payment",
+    totalEur: 25.5,
+    statusHistory: [],
     createdAt: new Date().toISOString(),
     ...overrides,
   };

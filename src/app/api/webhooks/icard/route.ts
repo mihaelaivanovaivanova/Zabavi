@@ -2,6 +2,7 @@ import { getICardPublicKey } from "@/infrastructure/payments/icard/icardApiClien
 import { parseFormUrlEncodedOrdered, verifyIcardFields } from "@/infrastructure/payments/icard/icardSignature";
 import { notificationIdempotencyStore } from "@/infrastructure/payments/notificationIdempotency";
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
+import { transitionOrderStatus } from "@/domain/order/orderStatusService";
 
 /**
  * iCard calls this URL (set as `URL_Notify` on the payment token request)
@@ -50,8 +51,7 @@ export async function POST(request: Request) {
     }
 
     order.paymentStatus = "paid";
-    order.status = "confirmed";
-    await orderRepository.save(order);
+    await transitionOrderStatus(order, "paid", "Плащането с карта е потвърдено.");
     await notificationIdempotencyStore.markProcessed(idempotencyKey);
     return new Response("OK", { status: 200 });
   }
@@ -68,8 +68,7 @@ export async function POST(request: Request) {
     }
 
     order.paymentStatus = "failed";
-    order.status = "cancelled";
-    await orderRepository.save(order);
+    await transitionOrderStatus(order, "failed", "Плащането с карта е отхвърлено.");
     await notificationIdempotencyStore.markProcessed(idempotencyKey);
     return new Response("OK", { status: 200 });
   }

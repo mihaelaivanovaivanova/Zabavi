@@ -28,6 +28,8 @@ function order(overrides: Partial<OrderDraft> = {}): OrderDraft {
     items: [],
     paymentMethod: "cash_on_delivery",
     status: "confirmed",
+    totalEur: 25.5,
+    statusHistory: [],
     createdAt: new Date().toISOString(),
     ...overrides,
   };
@@ -41,21 +43,16 @@ beforeEach(() => {
 });
 
 describe("hasDeliveredOrderForEmail", () => {
-  it("is true when an order for that email has a Delivered shipment event", async () => {
+  it("is true when an order for that email is delivered", async () => {
     const { hasDeliveredOrderForEmail } = await import("@/infrastructure/reviews/reviewService");
-    findAllMock.mockResolvedValue([
-      order({ shipmentEvents: [{ event: "New", occurredAt: new Date().toISOString() }] }),
-      order({ shipmentEvents: [{ event: "Delivered", occurredAt: new Date().toISOString() }] }),
-    ]);
+    findAllMock.mockResolvedValue([order({ status: "shipped" }), order({ status: "delivered" })]);
 
     await expect(hasDeliveredOrderForEmail("Buyer@Example.com")).resolves.toBe(true);
   });
 
   it("is false when no order for that email was ever delivered", async () => {
     const { hasDeliveredOrderForEmail } = await import("@/infrastructure/reviews/reviewService");
-    findAllMock.mockResolvedValue([
-      order({ shipmentEvents: [{ event: "New", occurredAt: new Date().toISOString() }] }),
-    ]);
+    findAllMock.mockResolvedValue([order({ status: "shipped" })]);
 
     await expect(hasDeliveredOrderForEmail("buyer@example.com")).resolves.toBe(false);
   });
@@ -89,7 +86,7 @@ describe("submitReview", () => {
   it("sends a confirmation email when the email has a delivered order", async () => {
     const { submitReview } = await import("@/infrastructure/reviews/reviewService");
     findAllMock.mockResolvedValue([
-      order({ customer: { fullName: "T", phone: "0", email: input.email }, shipmentEvents: [{ event: "Delivered", occurredAt: new Date().toISOString() }] }),
+      order({ customer: { fullName: "T", phone: "0", email: input.email }, status: "delivered" }),
     ]);
 
     await submitReview(input);

@@ -117,3 +117,96 @@ describe("createBoxNowDeliveryRequest", () => {
     ).rejects.toThrow(/not configured/);
   });
 });
+
+function mockAuthResponse() {
+  return new Response(JSON.stringify({ access_token: "token-abc", token_type: "Bearer", expires_in: 3600 }), {
+    status: 200,
+  });
+}
+
+describe("trackBoxNowParcel", () => {
+  it("maps BOX NOW's raw state vocabulary onto ShipmentStatus", async () => {
+    stubRequiredEnv();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockAuthResponse())
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                state: "final-destination",
+                events: [
+                  { type: "new", createTime: "2026-01-01T10:00:00Z" },
+                  { type: "final-destination", locationDisplayName: "Sofia", createTime: "2026-01-02T10:00:00Z" },
+                ],
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { trackBoxNowParcel } = await import("@/infrastructure/shipping/boxNowApiClient");
+    const result = await trackBoxNowParcel("PARCEL-1");
+
+    expect(result.currentStatus).toBe("ready_for_pickup");
+    expect(result.events.map((e) => e.status)).toEqual(["accepted", "ready_for_pickup"]);
+
+    const [url] = fetchMock.mock.calls[1];
+    expect(url).toBe("https://partner-api.boxnow.bg/api/v1/parcels?parcelId=PARCEL-1");
+  });
+
+  it("throws when the parcel isn't found", async () => {
+    stubRequiredEnv();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(mockAuthResponse())
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { trackBoxNowParcel } = await import("@/infrastructure/shipping/boxNowApiClient");
+    await expect(trackBoxNowParcel("PARCEL-1")).rejects.toThrow(/not found/);
+  });
+});
+
+describe("fetchBoxNowLabel", () => {
+  it("returns the raw PDF body from the label endpoint", async () => {
+    stubRequiredEnv();
+    const pdfBytes = new TextEncoder().encode("%PDF-1.4 fake label");
+    const fetchMock = vi.fn().mockResolvedValueOnce(mockAuthResponse()).mockResolvedValueOnce(new Response(pdfBytes, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { fetchBoxNowLabel } = await import("@/infrastructure/shipping/boxNowApiClient");
+    const result = await fetchBoxNowLabel("PARCEL-1");
+
+    expect(Array.from(new Uint8Array(result))).toEqual(Array.from(pdfBytes));
+    const [url] = fetchMock.mock.calls[1];
+    expect(url).toBe("https://partner-api.boxnow.bg/api/v1/parcels/PARCEL-1/label.pdf");
+  });
+});
+
+describe("cancelBoxNowParcel", () => {
+  it("posts to the colon-suffixed cancel action with no body", async () => {
+    stubRequiredEnv();
+    const fetchMock = vi.fn().mockResolvedValueOnce(mockAuthResponse()).mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { cancelBoxNowParcel } = await import("@/infrastructure/shipping/boxNowApiClient");
+    await cancelBoxNowParcel("PARCEL-1");
+
+    const [url, init] = fetchMock.mock.calls[1];
+    expect(url).toBe("https://partner-api.boxnow.bg/api/v1/parcels/PARCEL-1:cancel");
+    expect(init.method).toBe("POST");
+  });
+
+  it("throws ShippingProviderError when the cancel call fails", async () => {
+    stubRequiredEnv();
+    const fetchMock = vi.fn().mockResolvedValueOnce(mockAuthResponse()).mockResolvedValueOnce(new Response(null, { status: 403 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { cancelBoxNowParcel } = await import("@/infrastructure/shipping/boxNowApiClient");
+    await expect(cancelBoxNowParcel("PARCEL-1")).rejects.toThrow(/403/);
+  });
+});

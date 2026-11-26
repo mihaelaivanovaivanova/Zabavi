@@ -1,6 +1,8 @@
 import { getProductBySlug } from "@/config/site";
 import type { CartLineItem, OrderTotals } from "@/domain/cart/types";
+import type { PaymentMethodId } from "@/domain/payment/types";
 import { kitRepository } from "@/infrastructure/repositories/kitRepository";
+import { getCodFeeEur } from "@/infrastructure/settings/checkoutSettingsService";
 
 export type VariantPriceLookup = (productSlug: string, variantId: string) => Promise<number | null> | number | null;
 
@@ -10,6 +12,20 @@ async function defaultPriceLookup(productSlug: string, variantId: string): Promi
   return kit.priceEur;
 }
 
+export interface CalculateTotalsOptions {
+  /** Folds in `checkoutSettingsService.ts`'s COD surcharge when set to `"cash_on_delivery"`. */
+  paymentMethod?: PaymentMethodId;
+  priceLookup?: VariantPriceLookup;
+}
+
+const UNCONFIRMED_TOTALS: OrderTotals = {
+  subtotalEur: null,
+  shippingEur: null,
+  codFeeEur: null,
+  totalEur: null,
+  isPriceConfirmed: false,
+};
+
 /**
  * Server-side totals calculation. Only ever trusts kit prices from the
  * injected lookup (defaulting to `kitRepository`, keyed per variant) — a
@@ -17,10 +33,12 @@ async function defaultPriceLookup(productSlug: string, variantId: string): Promi
  */
 export async function calculateTotals(
   items: CartLineItem[],
-  priceLookup: VariantPriceLookup = defaultPriceLookup,
+  options: CalculateTotalsOptions = {},
 ): Promise<OrderTotals> {
+  const priceLookup = options.priceLookup ?? defaultPriceLookup;
+
   if (items.length === 0) {
-    return { subtotalEur: null, shippingEur: null, totalEur: null, isPriceConfirmed: false };
+    return UNCONFIRMED_TOTALS;
   }
 
   let subtotalEur = 0;
@@ -28,17 +46,19 @@ export async function calculateTotals(
   for (const item of items) {
     const price = await priceLookup(item.productSlug, item.variantId);
     if (price === null) {
-      return { subtotalEur: null, shippingEur: null, totalEur: null, isPriceConfirmed: false };
+      return UNCONFIRMED_TOTALS;
     }
     subtotalEur += price * item.quantity;
   }
 
   const shippingEur = 0;
+  const codFeeEur = options.paymentMethod === "cash_on_delivery" ? await getCodFeeEur() : 0;
 
   return {
     subtotalEur,
     shippingEur,
-    totalEur: subtotalEur + shippingEur,
+    codFeeEur,
+    totalEur: subtotalEur + shippingEur + codFeeEur,
     isPriceConfirmed: true,
   };
 }

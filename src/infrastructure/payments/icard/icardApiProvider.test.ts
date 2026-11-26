@@ -11,7 +11,9 @@ function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
     shippingDetails: { method: "courier", address: "ул. Примерна 1", city: "София", postalCode: "1000" },
     items: [{ productSlug: "akvarelen-nabor", variantId: "standard", quantity: 1 }],
     paymentMethod: "card_icard",
-    status: "pending",
+    status: "awaiting_payment",
+    totalEur: 25.5,
+    statusHistory: [],
     createdAt: new Date().toISOString(),
     ...overrides,
   };

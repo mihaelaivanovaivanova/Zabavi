@@ -4,6 +4,7 @@ export interface OrderRepository {
   save(order: OrderDraft): Promise<void>;
   findById(id: string): Promise<OrderDraft | undefined>;
   findAll(): Promise<OrderDraft[]>;
+  delete(id: string): Promise<void>;
 }
 
 /**
@@ -24,6 +25,10 @@ export class InMemoryOrderRepository implements OrderRepository {
 
   async findAll(): Promise<OrderDraft[]> {
     return [...this.orders.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async delete(id: string): Promise<void> {
+    this.orders.delete(id);
   }
 }
 
@@ -78,5 +83,9 @@ export const orderRepository: OrderRepository = {
   async findAll() {
     const repo = await getOrderRepositoryPromise();
     return repo.findAll();
+  },
+  async delete(id) {
+    const repo = await getOrderRepositoryPromise();
+    return repo.delete(id);
   },
 };
