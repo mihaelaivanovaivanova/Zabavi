@@ -10,6 +10,7 @@ interface CartItem {
 interface CartContextValue {
   item: CartItem | null;
   addToCart: (variantId: string, quantity: number) => void;
+  setItemQuantity: (quantity: number) => void;
   clearCart: () => void;
   isOpen: boolean;
   openCart: () => void;
@@ -18,6 +19,7 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "zabavi-cart";
+const MAX_QUANTITY = 10;
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [item, setItem] = useState<CartItem | null>(null);
@@ -51,8 +53,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Memoized so consumers can safely depend on these in their own effects —
   // without this, a new function identity on every CartProvider render would
   // re-fire any effect that lists one of these as a dependency.
+  //
+  // Adding the same variant again (e.g. clicking "Добави в количката"
+  // repeatedly) increases the existing quantity instead of resetting it;
+  // adding a different variant replaces the cart, since it only ever holds
+  // one line. Opens the drawer so the person sees what just happened.
   const addToCart = useCallback((variantId: string, quantity: number) => {
-    setItem({ variantId, quantity });
+    setItem((current) =>
+      current && current.variantId === variantId
+        ? { variantId, quantity: Math.min(MAX_QUANTITY, current.quantity + quantity) }
+        : { variantId, quantity },
+    );
+    setIsOpen(true);
+  }, []);
+
+  // Sets the cart's quantity to an exact value — what the drawer's own
+  // +/- stepper needs, as distinct from addToCart's "add more" semantics.
+  const setItemQuantity = useCallback((quantity: number) => {
+    setItem((current) => (current ? { ...current, quantity } : current));
   }, []);
 
   const clearCart = useCallback(() => {
@@ -68,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <CartContext.Provider value={{ item, addToCart, clearCart, isOpen, openCart, closeCart }}>
+    <CartContext.Provider value={{ item, addToCart, setItemQuantity, clearCart, isOpen, openCart, closeCart }}>
       {children}
     </CartContext.Provider>
   );

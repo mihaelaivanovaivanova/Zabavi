@@ -206,12 +206,7 @@ export function CheckoutForm() {
         <StepIndicator currentStep={step} />
 
         {step === 1 ? (
-          <CustomerInfoStep
-            register={register}
-            errors={errors}
-            emailRequired={paymentMethod === "card_icard"}
-            variants={resolvedVariants}
-          />
+          <CustomerInfoStep register={register} errors={errors} emailRequired={paymentMethod === "card_icard"} />
         ) : null}
 
         {step === 2 ? (

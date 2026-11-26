@@ -12,7 +12,7 @@ import { formatEur } from "@/lib/format";
 import { useKits } from "@/lib/useKits";
 
 export function CartDrawer() {
-  const { item, isOpen, closeCart, addToCart, clearCart } = useCart();
+  const { item, isOpen, closeCart, setItemQuantity, clearCart } = useCart();
   const { kits } = useKits();
 
   const kit = item ? kits.find((k) => k.variantId === item.variantId) : undefined;
@@ -82,7 +82,7 @@ export function CartDrawer() {
                   </button>
                 </div>
                 <div className="mt-auto flex items-center justify-between pt-3">
-                  <QuantityStepper value={item.quantity} onChange={(next) => addToCart(item.variantId, next)} />
+                  <QuantityStepper value={item.quantity} onChange={setItemQuantity} />
                   <span className="font-semibold text-ink-900">
                     {priceEur !== null ? formatEur(priceEur * item.quantity) : formatEur(null)}
                   </span>

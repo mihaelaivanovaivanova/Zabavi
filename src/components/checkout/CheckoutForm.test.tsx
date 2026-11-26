@@ -93,8 +93,10 @@ describe("CheckoutForm — cart integration", () => {
       </CartProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole("radio", { name: "Извън очертанията" })).toBeChecked());
-    expect(screen.getByLabelText("Брой кутии")).toHaveValue(3);
+    // The variant/quantity picked on the product page are no longer
+    // editable in checkout — only shown read-only in the summary sidebar.
+    await waitFor(() => expect(screen.getByText("Извън очертанията")).toBeInTheDocument());
+    expect(screen.getByText("× 3")).toBeInTheDocument();
   });
 
   it("defaults to the first variant and qty 1 when the cart is empty", async () => {
@@ -106,8 +108,8 @@ describe("CheckoutForm — cart integration", () => {
       </CartProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole("radio", { name: "Магията на Коледа" })).toBeChecked());
-    expect(screen.getByLabelText("Брой кутии")).toHaveValue(1);
+    await waitFor(() => expect(screen.getByText("Магията на Коледа")).toBeInTheDocument());
+    expect(screen.getByText("× 1")).toBeInTheDocument();
   });
 });
 
