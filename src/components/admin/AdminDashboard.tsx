@@ -31,6 +31,9 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
   const [hideCancelled, setHideCancelled] = useState(false);
   const [dueForReminderOnly, setDueForReminderOnly] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [syncState, setSyncState] = useState<
+    { status: "idle" } | { status: "syncing" } | { status: "done"; message: string } | { status: "error"; message: string }
+  >({ status: "idle" });
 
   const stats = useMemo(() => computeOrderStats(orders), [orders]);
 
@@ -81,6 +84,27 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
     setTimeout(() => setIsRefreshing(false), 600);
   }
 
+  async function handleSyncTracking() {
+    setSyncState({ status: "syncing" });
+
+    const response = await fetch("/api/admin/orders/sync-shipments", { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setSyncState({ status: "error", message: data.error ?? "Синхронизацията се провали." });
+      return;
+    }
+
+    const result = data.data as { checked: number; updated: number; ordersUpdated: number; failed: number };
+    setSyncState({
+      status: "done",
+      message: `Проверени ${result.checked} пратки, ${result.updated} промени в статус, ${result.ordersUpdated} поръчки напреднали.${
+        result.failed > 0 ? ` ${result.failed} неуспешни.` : ""
+      }`,
+    });
+    router.refresh();
+  }
+
   return (
     <div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -109,10 +133,29 @@ export function AdminDashboard({ orders }: { orders: OrderDraft[] }) {
 
       <div className="mt-10 flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold text-ink-900">Поръчки</h2>
-        <Button type="button" variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
-          {isRefreshing ? "Опресняване…" : "Опресни"}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleSyncTracking}
+            disabled={syncState.status === "syncing"}
+          >
+            {syncState.status === "syncing" ? "Синхронизиране…" : "Синхронизирай проследяването"}
+          </Button>
+          <Button type="button" variant="secondary" onClick={handleRefresh} disabled={isRefreshing}>
+            {isRefreshing ? "Опресняване…" : "Опресни"}
+          </Button>
+        </div>
       </div>
+
+      {syncState.status === "done" || syncState.status === "error" ? (
+        <p
+          role={syncState.status === "error" ? "alert" : undefined}
+          className={`mt-2 text-sm ${syncState.status === "error" ? "text-burgundy-600" : "text-ink-700"}`}
+        >
+          {syncState.message}
+        </p>
+      ) : null}
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <input

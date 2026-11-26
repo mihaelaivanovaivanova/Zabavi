@@ -13,6 +13,19 @@ import { allowedTransitions } from "@/domain/order/orderStatusService";
 import { shipmentStatusLabel } from "@/domain/shipping/types";
 import type { OrderDraft } from "@/domain/order/types";
 
+/**
+ * Unlike `kits/[variantId]` (whose variants are all known via
+ * generateStaticParams), this route has no fixed set of ids — Next tries to
+ * build a static shell for the "unknown id" case anyway (Cache Components'
+ * per-route shell validation), which trips over the shared admin layout's
+ * `AdminNav` reading `usePathname()` with no Suspense boundary around it.
+ * An order detail page is 100% request-time data by nature, so there's no
+ * meaningful static shell to produce here regardless — opting out is the
+ * correct fix, not a workaround. See node_modules/next/dist/docs/01-app/
+ * 03-api-reference/03-file-conventions/02-route-segment-config/instant.md.
+ */
+export const instant = false;
+
 function orderDisplayNumber(order: OrderDraft): string {
   return order.orderNumber ?? order.id.slice(0, 8).toUpperCase();
 }

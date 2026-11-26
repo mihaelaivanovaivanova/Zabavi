@@ -104,37 +104,6 @@ async function serveUpload(req, res, filename) {
   createReadStream(filePath, { start, end }).pipe(res);
 }
 
-// Periodic shipment-tracking sync (see shipmentTrackingSyncService.ts) —
-// ports smisul.bg's manual-trigger ShipmentTrackingSyncService into
-// something that runs on its own, since this custom server is a
-// persistent Node process (not serverless) and can safely own an
-// interval for its own lifetime. Calls back into the app's own request
-// pipeline over loopback HTTP, rather than importing the TS service
-// directly, because this plain .mjs file isn't run through Next's own
-// bundler/path-alias resolution the way every Route Handler is.
-// Disabled in --dev (hot-reload would otherwise stack up intervals) and
-// whenever INTERNAL_SYNC_SECRET isn't set — same "off until configured"
-// shape as the BOX NOW webhook.
-const SHIPMENT_SYNC_INTERVAL_MS = 15 * 60 * 1000;
-
-function scheduleShipmentSync() {
-  if (dev || !process.env.INTERNAL_SYNC_SECRET) return;
-
-  let syncInProgress = false;
-  setInterval(() => {
-    if (syncInProgress) return;
-    syncInProgress = true;
-    fetch(`http://127.0.0.1:${port}/api/internal/sync-shipments`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.INTERNAL_SYNC_SECRET}` },
-    })
-      .catch((error) => console.error("Shipment tracking sync request failed:", error))
-      .finally(() => {
-        syncInProgress = false;
-      });
-  }, SHIPMENT_SYNC_INTERVAL_MS);
-}
-
 app.prepare().then(() => {
   createServer((req, res) => {
     const pathname = (req.url || "").split("?")[0];
@@ -150,6 +119,5 @@ app.prepare().then(() => {
     handle(req, res);
   }).listen(port, () => {
     console.log(`> Server listening on port ${port} as ${dev ? "development" : "production"}`);
-    scheduleShipmentSync();
   });
 });

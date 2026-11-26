@@ -1,11 +1,15 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import type { OrderDraft } from "@/domain/order/types";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
   return {
@@ -54,5 +58,20 @@ describe("AdminDashboard", () => {
 
     expect(screen.getAllByText("Платена", { selector: "span" })).toHaveLength(1);
     expect(screen.getAllByText("Очаква плащане", { selector: "span" })).toHaveLength(1);
+  });
+
+  it("triggers a manual tracking sync and shows the result, same as smisul.bg's dashboard button", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: { checked: 30, updated: 1, ordersUpdated: 1, failed: 0 } }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AdminDashboard orders={[makeOrder()]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Синхронизирай проследяването" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Проверени 30 пратки, 1 промени в статус, 1 поръчки напреднали.")).toBeInTheDocument(),
+    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/admin/orders/sync-shipments", expect.objectContaining({ method: "POST" }));
   });
 });
