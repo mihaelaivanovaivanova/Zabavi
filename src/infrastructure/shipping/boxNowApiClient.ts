@@ -31,6 +31,24 @@ export async function isBoxNowApiConfigured(): Promise<boolean> {
   return isBoxNowConfigured();
 }
 
+// Ported from smisul.bg's BoxNowShippingProvider::client(), which applies a
+// 10s timeout to every BOX NOW call — without this, a hang (network/firewall
+// issue rather than a clean rejection) runs until whatever infrastructure
+// sits in front of the app times it out, an undiagnosable 502 with no body.
+const BOX_NOW_REQUEST_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(BOX_NOW_REQUEST_TIMEOUT_MS) });
+  } catch (error) {
+    const reason =
+      typeof error === "object" && error !== null && "name" in error && error.name === "TimeoutError"
+        ? "заявката изтече (no response from BOX NOW)"
+        : String(error);
+    throw new ShippingProviderError(`BOX NOW request to ${url} failed: ${reason}`);
+  }
+}
+
 interface CachedToken {
   accessToken: string;
   expiresAtMs: number;
@@ -46,7 +64,7 @@ async function getAccessToken(config: BoxNowApiConfig): Promise<string> {
     return cachedToken.accessToken;
   }
 
-  const response = await fetch(`${config.apiUrl}/api/v1/auth-sessions`, {
+  const response = await fetchWithTimeout(`${config.apiUrl}/api/v1/auth-sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -96,7 +114,7 @@ export async function createBoxNowDeliveryRequest(
 
   const accessToken = await getAccessToken(config);
 
-  const response = await fetch(`${config.apiUrl}/api/v1/delivery-requests`, {
+  const response = await fetchWithTimeout(`${config.apiUrl}/api/v1/delivery-requests`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -108,7 +126,10 @@ export async function createBoxNowDeliveryRequest(
       invoiceValue: input.invoiceValueEur.toFixed(2),
       paymentMode: input.paymentMode,
       amountToBeCollected: input.amountToBeCollectedEur.toFixed(2),
-      allowReturn: true,
+      // Must always be false per BOX NOW's own Partner API guide ("Винаги
+      // трябва да бъде false") — a hard requirement, not a default we're
+      // free to override. Ported from smisul.bg's verified-live integration.
+      allowReturn: false,
       origin: {
         locationId: config.originLocationId,
         contactName: config.originContactName,
@@ -121,7 +142,18 @@ export async function createBoxNowDeliveryRequest(
         contactEmail: input.customerEmail,
         contactNumber: input.customerPhone,
       },
-      items: [{ id: input.orderNumber, name: "ЗАБАВЍ creative kit", value: input.invoiceValueEur.toFixed(2), weight: 1 }],
+      items: [
+        {
+          id: input.orderNumber,
+          name: "ЗАБАВЍ creative kit",
+          value: input.invoiceValueEur.toFixed(2),
+          weight: 1,
+          // Required whenever origin is any-apm (this store's only origin)
+          // per the Partner API spec — 2/medium is the guide's own
+          // recommended default size. Ported from smisul.bg.
+          compartmentSize: 2,
+        },
+      ],
     }),
   });
 
@@ -195,7 +227,7 @@ export async function trackBoxNowParcel(trackingNumber: string): Promise<BoxNowT
   }
 
   const headers = await authHeaders(config);
-  const response = await fetch(`${config.apiUrl}/api/v1/parcels?parcelId=${encodeURIComponent(trackingNumber)}`, {
+  const response = await fetchWithTimeout(`${config.apiUrl}/api/v1/parcels?parcelId=${encodeURIComponent(trackingNumber)}`, {
     headers,
   });
 
@@ -228,7 +260,7 @@ export async function fetchBoxNowLabel(trackingNumber: string): Promise<ArrayBuf
   }
 
   const headers = await authHeaders(config);
-  const response = await fetch(`${config.apiUrl}/api/v1/parcels/${encodeURIComponent(trackingNumber)}/label.pdf`, {
+  const response = await fetchWithTimeout(`${config.apiUrl}/api/v1/parcels/${encodeURIComponent(trackingNumber)}/label.pdf`, {
     headers,
   });
 
@@ -247,7 +279,7 @@ export async function cancelBoxNowParcel(trackingNumber: string, _reason?: strin
   }
 
   const headers = await authHeaders(config);
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `${config.apiUrl}/api/v1/parcels/${encodeURIComponent(trackingNumber)}:cancel`,
     { method: "POST", headers },
   );

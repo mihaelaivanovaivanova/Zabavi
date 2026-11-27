@@ -45,7 +45,12 @@ export class SpeedyApiProvider implements ShippingProvider {
 
     const destination = destinationFor(order);
     const result = await createSpeedyShipment({
-      orderNumber: order.id,
+      // Speedy's `ref1` field is capped at 30 characters — the human
+      // readable orderNumber ("ZB-261127-A4F2") fits; order.id (a full
+      // UUID) does not, and was rejected live with
+      // "Реф1: Максималната позволена дължина е 30". Mirrors smisul.bg's
+      // own `'ref1' => $order->order_number`.
+      orderNumber: order.orderNumber ?? order.id,
       customerName: order.customer.fullName,
       customerPhone: order.customer.phone,
       destination,

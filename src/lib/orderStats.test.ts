@@ -34,6 +34,11 @@ describe("orderDisplayStatus", () => {
   it.each(cases)("labels status %s as %s", (status, label) => {
     expect(orderDisplayStatus(makeOrder({ status })).label).toBe(label);
   });
+
+  it("falls back to a neutral badge instead of crashing on an unrecognized status", () => {
+    const order = makeOrder({ status: "pending" as OrderStatus });
+    expect(orderDisplayStatus(order)).toEqual({ label: "pending", tone: "neutral" });
+  });
 });
 
 describe("isDueForReminder", () => {

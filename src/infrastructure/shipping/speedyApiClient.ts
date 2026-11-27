@@ -51,21 +51,41 @@ function withCredentials(config: SpeedyConfig, body: Record<string, unknown>): R
   };
 }
 
+// Without this, a call that hangs (e.g. a network/firewall issue between
+// the server and Speedy, rather than a clean rejection) runs until
+// whatever infrastructure sits in front of the app times it out — a plain,
+// undiagnosable 502 with no body, instead of the clear ShippingProviderError
+// below that an admin action can actually show.
+const SPEEDY_REQUEST_TIMEOUT_MS = 20_000;
+
 async function postJson(
   config: SpeedyConfig,
   path: string,
   body: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const response = await fetch(`${config.apiUrl.replace(/\/+$/, "")}/${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(withCredentials(config, body)),
-    // Every call here hits Speedy's live API with live data (shipments,
-    // live office/locker lists, tracking) — never something Next.js's own
-    // fetch cache should serve a stale copy of, in case that default ever
-    // applies to a POST call the way it does to GET.
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${config.apiUrl.replace(/\/+$/, "")}/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(withCredentials(config, body)),
+      // Every call here hits Speedy's live API with live data (shipments,
+      // live office/locker lists, tracking) — never something Next.js's own
+      // fetch cache should serve a stale copy of, in case that default ever
+      // applies to a POST call the way it does to GET.
+      cache: "no-store",
+      signal: AbortSignal.timeout(SPEEDY_REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    // DOMException (what AbortSignal.timeout() actually rejects with) isn't
+    // an instanceof Error in every runtime, so check `.name` directly rather
+    // than narrowing with `instanceof Error` first.
+    const reason =
+      typeof error === "object" && error !== null && "name" in error && error.name === "TimeoutError"
+        ? "заявката изтече (no response from Speedy)"
+        : String(error);
+    throw new ShippingProviderError(`Speedy ${path} failed: ${reason}`);
+  }
 
   const json = (await response.json().catch(() => null)) as Record<string, unknown> | null;
   const error = json?.error as { message?: string } | undefined;

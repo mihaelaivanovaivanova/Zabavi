@@ -217,6 +217,24 @@ describe("createSpeedyShipment", () => {
       }),
     ).rejects.toThrow(/not configured/);
   });
+
+  it("wraps a request that never gets a response (e.g. the connection just hangs) as a clear ShippingProviderError instead of letting it hang indefinitely", async () => {
+    stubRequiredEnv();
+    const timeoutError = new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeoutError));
+
+    const { createSpeedyShipment } = await import("@/infrastructure/shipping/speedyApiClient");
+    await expect(
+      createSpeedyShipment({
+        orderNumber: "order-1",
+        customerName: "Иван Иванов",
+        customerPhone: "0888123456",
+        destination: { type: "address", address: "ул. Тест 1", city: "София", postalCode: "1000" },
+        paymentMethod: "prepaid",
+        amountToCollectEur: 0,
+      }),
+    ).rejects.toThrow(/no response from Speedy/);
+  });
 });
 
 describe("trackSpeedyShipment", () => {

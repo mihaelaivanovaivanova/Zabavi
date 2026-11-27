@@ -15,8 +15,16 @@ const ORDER_STATUS_DISPLAY: Record<OrderStatus, { label: string; tone: BadgeTone
   failed: { label: "Неуспешна", tone: "danger" },
 };
 
+/**
+ * Falls back to a visible-but-harmless badge for any status value that
+ * isn't one of the 10 current `OrderStatus` members — e.g. a stale
+ * `"pending"` row left over from before that status set was finalized.
+ * Without this, a single legacy/unexpected value crashed the whole admin
+ * dashboard list (`Cannot read properties of undefined (reading 'tone')`)
+ * instead of only that one row rendering oddly.
+ */
 export function orderStatusDisplay(status: OrderStatus): { label: string; tone: BadgeTone } {
-  return ORDER_STATUS_DISPLAY[status];
+  return ORDER_STATUS_DISPLAY[status] ?? { label: status, tone: "neutral" };
 }
 
 export function orderDisplayStatus(order: OrderDraft): { label: string; tone: BadgeTone } {

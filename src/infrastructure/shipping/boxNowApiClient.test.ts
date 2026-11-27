@@ -81,6 +81,11 @@ describe("createBoxNowDeliveryRequest", () => {
     expect(deliveryBody.paymentMode).toBe("cod");
     expect(deliveryBody.amountToBeCollected).toBe("25.50");
     expect(deliveryBody.origin.locationId).toBe("origin-location-1");
+    // BOX NOW's Partner API guide requires allowReturn to always be false
+    // ("Винаги трябва да бъде false"), and compartmentSize is required on
+    // every item whenever the origin is any-apm (this store's only origin).
+    expect(deliveryBody.allowReturn).toBe(false);
+    expect(deliveryBody.items[0].compartmentSize).toBe(2);
   });
 
   it("throws ShippingProviderError when the API call fails", async () => {
@@ -100,6 +105,25 @@ describe("createBoxNowDeliveryRequest", () => {
         customerPhone: "0888123456",
       }),
     ).rejects.toThrow(/BOX NOW auth-sessions failed/);
+  });
+
+  it("wraps a request that never gets a response as a clear ShippingProviderError instead of letting it hang indefinitely", async () => {
+    stubRequiredEnv();
+    const timeoutError = new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeoutError));
+
+    const { createBoxNowDeliveryRequest } = await import("@/infrastructure/shipping/boxNowApiClient");
+    await expect(
+      createBoxNowDeliveryRequest({
+        orderNumber: "order-1",
+        invoiceValueEur: 25.5,
+        paymentMode: "prepaid",
+        amountToBeCollectedEur: 0,
+        destinationLockerId: "LOCKER-42",
+        customerName: "Иван Иванов",
+        customerPhone: "0888123456",
+      }),
+    ).rejects.toThrow(/no response from BOX NOW/);
   });
 
   it("throws ShippingProviderError when credentials are not configured", async () => {

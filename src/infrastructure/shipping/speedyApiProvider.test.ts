@@ -1,6 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SpeedyApiProvider } from "@/infrastructure/shipping/speedyApiProvider";
 import type { OrderDraft } from "@/domain/order/types";
+
+const createSpeedyShipmentMock = vi.fn().mockResolvedValue({ trackingNumber: "TRACK-1" });
+vi.mock("@/infrastructure/shipping/speedyApiClient", () => ({
+  createSpeedyShipment: (...args: unknown[]) => createSpeedyShipmentMock(...args),
+}));
+
+vi.mock("@/domain/cart/calculateTotals", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/domain/cart/calculateTotals")>();
+  return { calculateTotals: vi.fn(actual.calculateTotals) };
+});
+import { calculateTotals } from "@/domain/cart/calculateTotals";
 
 function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
   return {
@@ -37,5 +48,24 @@ describe("SpeedyApiProvider", () => {
     // aren't accidentally skipping the shared price-confirmation guard.
     const order = makeOrder({ shippingDetails: { method: "speedy_office", officeId: "4567", officeLabel: "София", city: "София" } });
     await expect(new SpeedyApiProvider().createShipment(order)).rejects.toThrow(/истинска цена/i);
+  });
+
+  it("sends the short human-readable orderNumber as Speedy's ref1, not the raw UUID id", async () => {
+    // Speedy's ref1 field is capped at 30 characters — a raw order.id
+    // (a full UUID) is rejected live ("Реф1: Максималната позволена
+    // дължина е 30"); order.orderNumber ("ZB-261127-A4F2") fits.
+    createSpeedyShipmentMock.mockClear();
+    vi.mocked(calculateTotals).mockResolvedValueOnce({
+      subtotalEur: 25.5,
+      shippingEur: 0,
+      codFeeEur: 0,
+      totalEur: 25.5,
+      isPriceConfirmed: true,
+    });
+    const order = makeOrder({ id: "8554f301-4077-4539-8097-f61931db3b28", orderNumber: "ZB-261127-A4F2" });
+
+    await new SpeedyApiProvider().createShipment(order);
+
+    expect(createSpeedyShipmentMock).toHaveBeenCalledWith(expect.objectContaining({ orderNumber: "ZB-261127-A4F2" }));
   });
 });
