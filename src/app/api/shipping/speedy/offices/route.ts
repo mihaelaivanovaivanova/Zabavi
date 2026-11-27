@@ -1,25 +1,16 @@
-import { NextResponse } from "next/server";
-import { searchSpeedyOffices } from "@/infrastructure/shipping/speedyApiClient";
-import { ShippingProviderError } from "@/domain/shipping/types";
+import { NextResponse, connection } from "next/server";
+import { getAllSpeedyOffices } from "@/infrastructure/shipping/speedyOfficesService";
 
 /**
- * Public: real Speedy offices/automated machines, optionally filtered by
- * city — backs the checkout's "Speedy"/"Speedy (автомат)" pickup-point
- * pickers, same role as `/api/box-now/lockers` for BOX NOW.
+ * Public, read-only: every Speedy office and automated machine (APT) in
+ * Bulgaria, in one flat list — backs the checkout's "Speedy"/"Speedy
+ * (автомат)" pickup-point pickers (the "Град" field there only lists
+ * cities that actually have one, same as smisul.bg's own `OfficePicker`).
+ * Cached server-side (see speedyOfficesService.ts); filtering by type/city
+ * happens client-side, same as /api/box-now/lockers for BOX NOW.
  */
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const city = searchParams.get("city") ?? undefined;
-  const type = searchParams.get("type");
-
-  try {
-    const offices = await searchSpeedyOffices(city);
-    const filtered = type === "office" || type === "locker" ? offices.filter((office) => office.type === type) : offices;
-    return NextResponse.json({ offices: filtered });
-  } catch (error) {
-    if (error instanceof ShippingProviderError) {
-      return NextResponse.json({ error: error.message }, { status: 502 });
-    }
-    throw error;
-  }
+export async function GET() {
+  await connection();
+  const offices = await getAllSpeedyOffices();
+  return NextResponse.json({ offices });
 }

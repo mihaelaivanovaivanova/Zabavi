@@ -10,6 +10,7 @@ export type IntegrationProvider =
   | "box_now_marketing"
   | "how_it_works"
   | "speedy_settlements"
+  | "speedy_offices"
   | "shipping_prices";
 
 export interface SettingsRepository {

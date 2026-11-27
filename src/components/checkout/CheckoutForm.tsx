@@ -20,6 +20,7 @@ import { useKits } from "@/lib/useKits";
 import { usePricing } from "@/lib/usePricing";
 import { useSettlements } from "@/lib/useSettlements";
 import { useBoxNowLockers } from "@/lib/useBoxNowLockers";
+import { useSpeedyOffices } from "@/lib/useSpeedyOffices";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -103,12 +104,15 @@ export function CheckoutForm() {
   // smisul.bg's own checkout starts these fetches the moment the checkout
   // page loads for the same reason: by the time someone has filled in their
   // name/phone/email and reached the delivery step, the ~5,300-row
-  // settlement list (and BOX NOW's own locations feed) has had that whole
-  // stretch of time to arrive, instead of only starting once the picker
-  // that needs it happens to mount. Both hooks share a page-lifetime cache
-  // (see useSettlements.ts/useBoxNowLockers.ts), so this is the only fetch.
+  // settlement list (BOX NOW's own locations feed, and Speedy's nationwide
+  // office/locker list) has had that whole stretch of time to arrive,
+  // instead of only starting once the picker that needs it happens to
+  // mount. All three hooks share a page-lifetime cache (see
+  // useSettlements.ts/useBoxNowLockers.ts/useSpeedyOffices.ts), so this is
+  // the only fetch.
   useSettlements();
   useBoxNowLockers();
+  useSpeedyOffices();
   const activeKitPriceEur = kits.find((kit) => kit.variantId === variantId)?.priceEur ?? null;
   const resolvedVariants = product.variants.map((variant) =>
     resolveVariant(
