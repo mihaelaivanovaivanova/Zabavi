@@ -99,6 +99,10 @@ export async function POST(request: Request) {
         : undefined,
     shippingDetails,
     wantsInvoice: values.wantsInvoice,
+    invoiceDetails:
+      values.wantsInvoice && values.invoiceCompany && values.invoiceVatNumber
+        ? { company: values.invoiceCompany, vatNumber: values.invoiceVatNumber }
+        : undefined,
     giftMessage: values.giftMessage,
     items: [{ productSlug: product.slug, variantId: values.variantId, quantity: values.quantity }],
     paymentMethod: values.paymentMethod,

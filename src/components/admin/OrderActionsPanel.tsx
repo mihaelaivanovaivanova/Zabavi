@@ -60,6 +60,21 @@ export function OrderActionsPanel({
     router.refresh();
   }
 
+  async function handleCreateShipment() {
+    setShipmentState({ status: "working" });
+
+    const response = await fetch(`/api/admin/orders/${orderId}/shipment/create`, { method: "POST" });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setShipmentState({ status: "error", message: data.error ?? "Заявяването на пратката се провали." });
+      return;
+    }
+
+    setShipmentState({ status: "idle" });
+    router.refresh();
+  }
+
   async function handleCancelShipment() {
     if (!confirm("Сигурен ли си, че искаш да анулираш пратката при превозвача?")) return;
     setShipmentState({ status: "working" });
@@ -127,26 +142,38 @@ export function OrderActionsPanel({
         </form>
       </section>
 
-      {hasTrackingNumber ? (
-        <section className="rounded-2xl border border-lavender-200 bg-paper-50 p-6">
-          <h2 className="text-lg font-semibold text-ink-900">Пратка</h2>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <a href={`/api/admin/orders/${orderId}/shipment/label`} target="_blank" rel="noreferrer">
-              <Button type="button" variant="secondary">
-                Изтегли етикет
+      <section className="rounded-2xl border border-lavender-200 bg-paper-50 p-6">
+        <h2 className="text-lg font-semibold text-ink-900">Пратка</h2>
+        <div className="mt-3 flex flex-wrap gap-3">
+          {hasTrackingNumber ? (
+            <>
+              <a href={`/api/admin/orders/${orderId}/shipment/label`} target="_blank" rel="noreferrer">
+                <Button type="button" variant="secondary">
+                  Изтегли етикет
+                </Button>
+              </a>
+              <Button type="button" variant="secondary" onClick={handleCancelShipment} disabled={shipmentState.status === "working"}>
+                {shipmentState.status === "working" ? "Анулиране…" : "Анулирай пратката"}
               </Button>
-            </a>
-            <Button type="button" variant="secondary" onClick={handleCancelShipment} disabled={shipmentState.status === "working"}>
-              {shipmentState.status === "working" ? "Анулиране…" : "Анулирай пратката"}
+            </>
+          ) : (
+            <Button type="button" variant="secondary" onClick={handleCreateShipment} disabled={shipmentState.status === "working"}>
+              {shipmentState.status === "working" ? "Заявяване…" : "Създай пратка"}
             </Button>
-          </div>
-          {shipmentState.status === "error" ? (
-            <p role="alert" className="mt-2 text-sm text-burgundy-600">
-              {shipmentState.message}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
+          )}
+        </div>
+        {!hasTrackingNumber ? (
+          <p className="mt-2 text-sm text-ink-700">
+            Няма заявена пратка — автоматичното заявяване при потвърждение на поръчката е неуспяло (вижте грешката по-долу
+            при опит) или е пропуснато. Натисни „Създай пратка“, за да опиташ отново.
+          </p>
+        ) : null}
+        {shipmentState.status === "error" ? (
+          <p role="alert" className="mt-2 text-sm text-burgundy-600">
+            {shipmentState.message}
+          </p>
+        ) : null}
+      </section>
 
       <section className="rounded-2xl border border-burgundy-300 bg-paper-50 p-6">
         <h2 className="text-lg font-semibold text-burgundy-700">Изтрий поръчката</h2>

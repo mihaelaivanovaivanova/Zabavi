@@ -88,6 +88,8 @@ export function CheckoutForm() {
       speedyOfficeCity: "",
       paymentMethod: "card_icard",
       wantsInvoice: false,
+      invoiceCompany: "",
+      invoiceVatNumber: "",
       giftMessage: "",
       quantity: defaultQuantity,
     },

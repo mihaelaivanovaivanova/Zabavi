@@ -1,5 +1,6 @@
 import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { Badge } from "@/components/ui/Badge";
+import { InputField } from "@/components/ui/Field";
 import { AddressFields } from "@/components/checkout/AddressFields";
 import { BoxNowLockerPicker, type BoxNowSelection } from "@/components/checkout/BoxNowLockerPicker";
 import { SpeedyOfficePicker } from "@/components/checkout/SpeedyOfficePicker";
@@ -25,6 +26,7 @@ export function DeliveryAndPaymentStep({
 }) {
   const deliveryMethod = watch("deliveryMethod");
   const paymentMethod = watch("paymentMethod");
+  const wantsInvoice = watch("wantsInvoice");
   const boxNowLockerId = watch("boxNowLockerId");
   const boxNowLockerAddressLine1 = watch("boxNowLockerAddressLine1");
   const boxNowLockerPostalCode = watch("boxNowLockerPostalCode");
@@ -184,10 +186,6 @@ export function DeliveryAndPaymentStep({
         </fieldset>
       </div>
 
-      {deliveryMethod === "box_now" && paymentMethod === "card_icard" ? (
-        <AddressFields register={register} errors={errors} watch={watch} setValue={setValue} title="Адрес за фактуриране" />
-      ) : null}
-
       <label className="flex items-start gap-3 rounded-xl border border-lavender-200 bg-paper-50 px-4 py-3 cursor-pointer">
         <input type="checkbox" className="mt-1" {...register("wantsInvoice")} />
         <span>
@@ -195,6 +193,22 @@ export function DeliveryAndPaymentStep({
           <span className="block text-sm text-ink-700">Ще получиш фактура на имейла си след потвърждение на поръчката.</span>
         </span>
       </label>
+
+      {wantsInvoice ? (
+        <div className="grid gap-4 rounded-xl border border-lavender-200 bg-paper-50 p-4 sm:grid-cols-2">
+          <InputField label="Фирма" {...register("invoiceCompany")} error={errors.invoiceCompany?.message} />
+          <InputField label="ДДС номер" {...register("invoiceVatNumber")} error={errors.invoiceVatNumber?.message} />
+        </div>
+      ) : null}
+
+      {/* A courier delivery already collects a street address above, which
+          doubles as the billing address — no separate section needed there.
+          Every other delivery method has no address of its own, so one is
+          collected here whenever card_icard needs it for iCard, or an
+          invoice was requested. */}
+      {deliveryMethod !== "courier" && (paymentMethod === "card_icard" || wantsInvoice) ? (
+        <AddressFields register={register} errors={errors} watch={watch} setValue={setValue} title="Адрес за фактуриране" />
+      ) : null}
     </div>
   );
 }

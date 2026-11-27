@@ -30,14 +30,34 @@ export const checkoutSchema = z
     speedyOfficeCity: z.string().trim().optional(),
     paymentMethod: z.enum(["card_icard", "cash_on_delivery"]),
     wantsInvoice: z.boolean().optional(),
+    invoiceCompany: z.string().trim().optional(),
+    invoiceVatNumber: z.string().trim().optional(),
     giftMessage: z.string().trim().max(300, "Личното послание е твърде дълго.").optional(),
     quantity: z.number().int().min(1, "Количеството трябва да е поне 1.").max(10, "Максимум 10 броя."),
   })
   .superRefine((values, ctx) => {
-    // Billing address is required for Speedy-to-address delivery (it doubles as the
-    // shipping address) and also whenever card_icard is chosen — iCard's IPGPurchase
-    // requires a billing address regardless of delivery method.
-    if (values.deliveryMethod === "courier" || values.paymentMethod === "card_icard") {
+    const hasOwnShippingAddress = values.deliveryMethod === "courier";
+
+    // Shipping address, required whenever delivering straight to a street address.
+    if (hasOwnShippingAddress) {
+      if (!values.address || values.address.length < 5) {
+        ctx.addIssue({ code: "custom", path: ["address"], message: "Въведи адрес за доставка." });
+      }
+      if (!values.city || values.city.length < 2) {
+        ctx.addIssue({ code: "custom", path: ["city"], message: "Въведи населено място." });
+      }
+      if (!values.postalCode || !/^[0-9]{4}$/.test(values.postalCode)) {
+        ctx.addIssue({ code: "custom", path: ["postalCode"], message: "Пощенският код трябва да е 4 цифри." });
+      }
+    }
+
+    // Billing address, required whenever there's no shipping address to double
+    // as one AND either card_icard needs one (iCard's IPGPurchase requires a
+    // billing address regardless of delivery method) or an invoice was
+    // requested — reuses the same three fields as the block above, since a
+    // courier delivery's own shipping address already covers both roles.
+    const needsBillingAddress = !hasOwnShippingAddress && (values.paymentMethod === "card_icard" || values.wantsInvoice);
+    if (needsBillingAddress) {
       if (!values.address || values.address.length < 5) {
         ctx.addIssue({ code: "custom", path: ["address"], message: "Въведи адрес за фактуриране." });
       }
@@ -46,6 +66,15 @@ export const checkoutSchema = z
       }
       if (!values.postalCode || !/^[0-9]{4}$/.test(values.postalCode)) {
         ctx.addIssue({ code: "custom", path: ["postalCode"], message: "Пощенският код трябва да е 4 цифри." });
+      }
+    }
+
+    if (values.wantsInvoice) {
+      if (!values.invoiceCompany || values.invoiceCompany.trim().length < 2) {
+        ctx.addIssue({ code: "custom", path: ["invoiceCompany"], message: "Въведи име на фирма." });
+      }
+      if (!values.invoiceVatNumber || values.invoiceVatNumber.trim().length < 3) {
+        ctx.addIssue({ code: "custom", path: ["invoiceVatNumber"], message: "Въведи ДДС номер." });
       }
     }
 

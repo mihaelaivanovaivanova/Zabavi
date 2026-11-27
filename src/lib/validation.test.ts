@@ -101,4 +101,56 @@ describe("checkoutSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("rejects an invoice request without a company name and VAT number", () => {
+    const result = checkoutSchema.safeParse({ ...validInput, wantsInvoice: true });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts an invoice request for courier delivery using its own shipping address, with no extra billing fields", () => {
+    const result = checkoutSchema.safeParse({
+      ...validInput,
+      wantsInvoice: true,
+      invoiceCompany: "Тест ЕООД",
+      invoiceVatNumber: "BG123456789",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("requires a billing address for an invoice request on a delivery method with no shipping address of its own", () => {
+    const result = checkoutSchema.safeParse({
+      ...validInput,
+      deliveryMethod: "box_now",
+      paymentMethod: "card_icard",
+      email: "ivan@example.com",
+      boxNowLockerId: "LOCKER-42",
+      boxNowLockerAddressLine1: "ул. Тест 5",
+      boxNowLockerPostalCode: "1000",
+      wantsInvoice: true,
+      invoiceCompany: "Тест ЕООД",
+      invoiceVatNumber: "BG123456789",
+      address: undefined,
+      city: undefined,
+      postalCode: undefined,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a billing address for cash-on-delivery Speedy office/locker when an invoice is requested, even without card payment", () => {
+    const result = checkoutSchema.safeParse({
+      ...validInput,
+      deliveryMethod: "speedy_office",
+      paymentMethod: "cash_on_delivery",
+      speedyOfficeId: "4567",
+      speedyOfficeLabel: "СОФИЯ ЦЕНТЪР",
+      speedyOfficeCity: "София",
+      wantsInvoice: true,
+      invoiceCompany: "Тест ЕООД",
+      invoiceVatNumber: "BG123456789",
+      address: undefined,
+      city: undefined,
+      postalCode: undefined,
+    });
+    expect(result.success).toBe(false);
+  });
 });

@@ -60,6 +60,8 @@ export interface OrderDraft {
   shippingDetails: ShippingDetails;
   /** Customer requested an invoice at checkout — shown in the admin dashboard; `sendOrderInvoiceEmail` still fires on every `delivered` order regardless, same as before this flag existed. */
   wantsInvoice?: boolean;
+  /** Only set when `wantsInvoice` — the company name + VAT number to put on the invoice. */
+  invoiceDetails?: { company: string; vatNumber: string };
   giftMessage?: string;
   items: CartLineItem[];
   paymentMethod: PaymentMethodId;

@@ -64,7 +64,11 @@ export function OrderReviewStep({
         {values.wantsInvoice ? (
           <div className="flex justify-between gap-4">
             <dt className="text-ink-700">Фактура</dt>
-            <dd className="text-right">Да</dd>
+            <dd className="text-right">
+              Да
+              {values.invoiceCompany ? <span className="block text-ink-700">{values.invoiceCompany}</span> : null}
+              {values.invoiceVatNumber ? <span className="block text-ink-700">{values.invoiceVatNumber}</span> : null}
+            </dd>
           </div>
         ) : null}
         {values.giftMessage ? (

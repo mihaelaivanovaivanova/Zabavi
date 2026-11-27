@@ -74,4 +74,35 @@ describe("DeliveryAndPaymentStep", () => {
     expect(screen.getByRole("radio", { name: /BOX NOW/ })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: /BOX NOW/ })).toBeDisabled();
   });
+
+  it("does not show the invoice company/VAT fields until 'Искам фактура' is checked", () => {
+    render(<Harness />);
+
+    expect(screen.queryByLabelText("Фирма")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Искам фактура/ }));
+    expect(screen.getByLabelText("Фирма")).toBeInTheDocument();
+    expect(screen.getByLabelText("ДДС номер")).toBeInTheDocument();
+  });
+
+  it("shows no separate billing address section for courier delivery, even with an invoice requested", () => {
+    render(<Harness initial={{ deliveryMethod: "courier" }} />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Искам фактура/ }));
+
+    expect(screen.queryByRole("heading", { name: "Адрес за фактуриране" })).not.toBeInTheDocument();
+  });
+
+  it("shows a billing address section for BOX NOW once an invoice is requested", () => {
+    render(<Harness initial={{ deliveryMethod: "box_now", paymentMethod: "cash_on_delivery" }} />);
+
+    expect(screen.queryByRole("heading", { name: "Адрес за фактуриране" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Искам фактура/ }));
+    expect(screen.getByRole("heading", { name: "Адрес за фактуриране" })).toBeInTheDocument();
+  });
+
+  it("shows a billing address section for BOX NOW with card payment regardless of the invoice checkbox", () => {
+    render(<Harness initial={{ deliveryMethod: "box_now", paymentMethod: "card_icard" }} />);
+
+    expect(screen.getByRole("heading", { name: "Адрес за фактуриране" })).toBeInTheDocument();
+  });
 });

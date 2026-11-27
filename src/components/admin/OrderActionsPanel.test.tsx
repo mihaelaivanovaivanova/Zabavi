@@ -45,9 +45,38 @@ describe("OrderActionsPanel", () => {
     expect(body).toEqual({ status: "paid", note: "Платено в брой" });
   });
 
-  it("hides the shipment actions when there is no tracking number", () => {
+  it("offers 'Създай пратка' instead of label/cancel when there is no tracking number", () => {
     render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
     expect(screen.queryByRole("button", { name: "Анулирай пратката" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Изтегли етикет" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Създай пратка" })).toBeInTheDocument();
+  });
+
+  it("creates the shipment and refreshes on success", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {} }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    fireEvent.click(screen.getByRole("button", { name: "Създай пратка" }));
+
+    await waitFor(() => expect(refreshMock).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/admin/orders/order-1/shipment/create",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("shows the real error when creating the shipment fails", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: "Speedy credentials are not configured." }), { status: 502 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    fireEvent.click(screen.getByRole("button", { name: "Създай пратка" }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Speedy credentials are not configured."));
+    expect(refreshMock).not.toHaveBeenCalled();
   });
 
   it("cancels the shipment after confirmation", async () => {

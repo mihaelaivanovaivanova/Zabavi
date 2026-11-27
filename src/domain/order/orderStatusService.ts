@@ -1,6 +1,6 @@
 import type { OrderDraft, OrderStatus } from "@/domain/order/types";
 import { ShippingProviderError, type ShipmentCreationResult } from "@/domain/shipping/types";
-import { getShippingProvider } from "@/infrastructure/shipping/getShippingProvider";
+import { createOrderShipment } from "@/infrastructure/shipping/carrierActions";
 import { orderRepository } from "@/infrastructure/repositories/orderRepository";
 import {
   sendAdminOrderNotificationEmail,
@@ -46,8 +46,7 @@ async function createShipmentIfNeeded(order: OrderDraft): Promise<ShipmentCreati
   if (order.trackingNumber) return null;
 
   try {
-    const provider = await getShippingProvider(order.shippingDetails.method);
-    const result = await provider.createShipment(order);
+    const result = await createOrderShipment(order);
     if (result.isLive && result.referenceNumber) {
       order.trackingNumber = result.referenceNumber;
       order.shipmentStatus = "accepted";

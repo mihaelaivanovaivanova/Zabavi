@@ -5,6 +5,7 @@ const fetchSpeedyLabelMock = vi.fn();
 const cancelSpeedyShipmentMock = vi.fn();
 const fetchBoxNowLabelMock = vi.fn();
 const cancelBoxNowParcelMock = vi.fn();
+const getShippingProviderMock = vi.fn();
 
 vi.mock("@/infrastructure/shipping/speedyApiClient", () => ({
   fetchSpeedyLabel: fetchSpeedyLabelMock,
@@ -13,6 +14,9 @@ vi.mock("@/infrastructure/shipping/speedyApiClient", () => ({
 vi.mock("@/infrastructure/shipping/boxNowApiClient", () => ({
   fetchBoxNowLabel: fetchBoxNowLabelMock,
   cancelBoxNowParcel: cancelBoxNowParcelMock,
+}));
+vi.mock("@/infrastructure/shipping/getShippingProvider", () => ({
+  getShippingProvider: getShippingProviderMock,
 }));
 
 function makeOrder(overrides: Partial<OrderDraft> = {}): OrderDraft {
@@ -36,6 +40,7 @@ beforeEach(() => {
   cancelSpeedyShipmentMock.mockReset();
   fetchBoxNowLabelMock.mockReset();
   cancelBoxNowParcelMock.mockReset();
+  getShippingProviderMock.mockReset();
 });
 
 describe("fetchOrderShipmentLabel", () => {
@@ -80,5 +85,31 @@ describe("cancelOrderShipment", () => {
       makeOrder({ shippingDetails: { method: "box_now", lockerId: "L-1", addressLine1: "ул. 1", postalCode: "1000" } }),
     );
     expect(cancelBoxNowParcelMock).toHaveBeenCalledWith("TRACK-1", undefined);
+  });
+});
+
+describe("createOrderShipment", () => {
+  it("creates a shipment through whichever provider getShippingProvider resolves for the order's method", async () => {
+    const createShipment = vi.fn().mockResolvedValue({ isLive: true, notice: "Заявена.", referenceNumber: "NEW-TRACK" });
+    getShippingProviderMock.mockResolvedValue({ method: "courier", createShipment });
+    const { createOrderShipment } = await import("@/infrastructure/shipping/carrierActions");
+
+    const order = makeOrder({ trackingNumber: undefined });
+    const result = await createOrderShipment(order);
+
+    expect(getShippingProviderMock).toHaveBeenCalledWith("courier");
+    expect(createShipment).toHaveBeenCalledWith(order);
+    expect(result).toEqual({ isLive: true, notice: "Заявена.", referenceNumber: "NEW-TRACK" });
+  });
+
+  it("lets the provider's failure propagate instead of swallowing it", async () => {
+    const { ShippingProviderError } = await import("@/domain/shipping/types");
+    const createShipment = vi.fn().mockRejectedValue(new ShippingProviderError("Speedy credentials are not configured."));
+    getShippingProviderMock.mockResolvedValue({ method: "courier", createShipment });
+    const { createOrderShipment } = await import("@/infrastructure/shipping/carrierActions");
+
+    await expect(createOrderShipment(makeOrder({ trackingNumber: undefined }))).rejects.toThrow(
+      "Speedy credentials are not configured.",
+    );
   });
 });
