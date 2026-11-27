@@ -56,14 +56,14 @@ export function GiftMeaning() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-lg font-semibold text-ink-900">
+        <p className="mt-6 text-center text-lg font-semibold text-ink-900">
           ЗАБАВЍ е подарък за онова нейно „някой ден ще опитам“.
         </p>
-        <p className="mt-3 text-ink-700">
+        <p className="mt-3 text-center text-ink-700">
           Скиците дават първата посока. Видео уроците помагат, когато не знае как да продължи. А цветовете и всичко
           останало вече я чакат в кутията.
         </p>
-        <p className="mt-4 font-medium text-burgundy-700">
+        <p className="mt-4 text-center font-medium text-burgundy-700">
           Ти ѝ подаряваш възможността. Тя избира кога и как да ѝ се наслади.
         </p>
       </div>

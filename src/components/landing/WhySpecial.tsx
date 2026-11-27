@@ -6,7 +6,12 @@ export function WhySpecial() {
     <Section tone="lavender">
       <div className="relative mx-auto max-w-4xl">
         {/* eslint-disable-next-line @next/next/no-img-element -- decorative watercolor background, not a content photo */}
-        <img src="/images/heart-banner.webp" alt="" aria-hidden="true" className="w-full h-auto" />
+        <img
+          src="/images/heart-banner.webp"
+          alt=""
+          aria-hidden="true"
+          className="relative top-6 h-auto w-full sm:top-0"
+        />
         <div className="absolute inset-0 flex items-center justify-center p-10 sm:p-16">
           <div className="max-w-sm text-center sm:max-w-lg">
             <h2 className="text-xl font-semibold text-ink-900 sm:text-3xl">Какво прави подаръка специален</h2>

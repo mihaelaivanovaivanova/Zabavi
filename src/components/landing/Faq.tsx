@@ -8,7 +8,7 @@ export function Faq() {
 
   return (
     <Section tone="lavender">
-      <h2 className="text-center text-3xl font-semibold text-ink-900">Често задавани въпроси</h2>
+      <h2 className="text-center text-3xl font-semibold text-ink-900">Други често задавани въпроси</h2>
       <div className="mx-auto mt-10 max-w-2xl divide-y divide-lavender-200">
         {content.items.map((item) => (
           <details key={item.question} className="group py-5">

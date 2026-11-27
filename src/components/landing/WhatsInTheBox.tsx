@@ -18,23 +18,25 @@ export function WhatsInTheBox() {
   return (
     <Section id="whats-inside" tone="lavender">
       <div className="grid gap-10 sm:grid-cols-2 sm:items-center">
+        {/* On mobile the video plays after the box-contents list (order-2);
+            on desktop it keeps its original left-column position (sm:order-1). */}
         {videoUrl ? (
           <video
             src={videoUrl}
             poster={thumbnailUrl}
             controls
             playsInline
-            className="aspect-[9/16] w-full max-w-sm mx-auto rounded-2xl bg-ink-900/5 object-cover"
+            className="order-2 aspect-[9/16] w-full max-w-sm mx-auto rounded-2xl bg-ink-900/5 object-cover sm:order-1"
           />
         ) : (
           <PlaceholderImage
             label="Съдържание на кутията"
             alt="Разложено съдържание на акварелния creative kit"
             aspect="reel"
-            className="w-full max-w-sm mx-auto"
+            className="order-2 w-full max-w-sm mx-auto sm:order-1"
           />
         )}
-        <div>
+        <div className="order-1 sm:order-2">
           <h2 className="text-3xl font-semibold text-ink-900">Какво има в кутията</h2>
           <ul className="mt-6 space-y-3">
             {boxContents.map((item) => (

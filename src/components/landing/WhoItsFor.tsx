@@ -24,7 +24,7 @@ const audiences = [
     heading: "За теб, ако денят ти е пълен с грижа за другите",
     image: "/images/illustrations/caretaker-tired.webp",
     imageClassName:
-      "absolute -left-4 top-1/2 w-28 -mt-44 -translate-y-1/2 object-contain sm:-left-10 sm:-mt-32 sm:w-36 lg:-left-16 lg:-mt-36 lg:w-48",
+      "absolute -left-4 top-1/2 w-36 -mt-56 -translate-y-1/2 object-contain sm:-left-10 sm:-mt-32 sm:w-36 lg:-left-16 lg:-mt-36 lg:w-48",
     paragraphs: [
       "За майката, която иска малко време за себе си. За човека, към когото винаги има още една молба. За онзи, който вечер осъзнава, че отново е оставил собствените си желания накрая.",
       "Не е нужно да завършиш цяла картина наведнъж. Можеш да започнеш и да се върнеш към нея, когато имаш възможност.",
@@ -35,7 +35,7 @@ const audiences = [
     image: "/images/illustrations/scroll-break-bench.webp",
     imageSide: "right" as const,
     imageClassName:
-      "absolute -right-4 top-1/2 mt-10 w-32 -translate-y-1/2 object-contain sm:mt-24 sm:-right-14 sm:w-40 lg:-right-20 lg:mt-28 lg:w-48",
+      "absolute -right-7 top-1/2 mt-4 w-32 -translate-y-1/2 object-contain sm:mt-24 sm:-right-14 sm:w-40 lg:-right-20 lg:mt-28 lg:w-48",
     paragraphs: [
       "Нещо, което да държиш в ръцете си. Да смесваш, да пробваш и да виждаш как се променя пред очите ти.",
       "Видео урокът ти показва как да започнеш. После можеш да го спреш и да останеш с четката, водата и цветовете.",
@@ -46,7 +46,7 @@ const audiences = [
     image: "/images/illustrations/learn-by-trying-joy.webp",
     imageNoIndent: true,
     imageClassName:
-      "absolute bottom-0 right-14 w-28 translate-x-3 translate-y-3 object-contain sm:w-40 sm:right-24 sm:translate-x-6 sm:translate-y-6 lg:w-48 lg:right-28 lg:translate-x-4 lg:translate-y-4",
+      "absolute bottom-16 right-20 w-48 translate-x-0 translate-y-0 object-contain sm:w-40 sm:right-24 sm:bottom-0 sm:translate-x-6 sm:translate-y-6 lg:w-48 lg:right-28 lg:translate-x-4 lg:translate-y-4",
     paragraphs: [
       "Към всяка скица има видео урок с вариант на завършена картина и акварелни техники, които да приложиш на практика.",
       "Гледаш, пробваш и постепенно откриваш какво може твоята четка.",
@@ -57,7 +57,7 @@ const audiences = [
     image: "/images/illustrations/gift-for-loved-one.webp",
     imageSide: "right" as const,
     imageClassName:
-      "absolute -right-2 top-1/2 mt-10 w-28 -translate-y-1/2 object-contain sm:mt-0 sm:-right-14 sm:w-36 lg:-right-16 lg:w-44",
+      "absolute -right-2 top-1/2 mt-16 w-36 -translate-y-1/2 object-contain sm:mt-0 sm:-right-14 sm:w-36 lg:-right-16 lg:w-44",
     paragraphs: [
       "Омръзнало ти е от парфюми и кутии бонбони, които не казват нищо лично. Искаш нещо, което другият наистина ще отвори и ще изживее, а не ще остави в чекмеджето.",
       "ЗАБАВЍ е повод да седнете заедно с четка в ръка — или начин да подариш на любим човек малко спокойствие, което той или тя да изживее сам/а, когато поиска.",
@@ -108,7 +108,7 @@ export function WhoItsFor() {
                     audience.imageClassName ??
                     (isRight
                       ? "absolute -right-2 top-1/2 mt-10 w-24 -translate-y-1/2 object-contain sm:mt-0 sm:-right-12 sm:w-20 lg:-right-6 lg:w-24"
-                      : "absolute -left-4 top-1/2 w-28 -mt-44 -translate-y-1/2 object-contain sm:-left-16 sm:-mt-16 sm:w-24 lg:-left-18 lg:w-32")
+                      : "absolute -left-4 top-1/2 w-28 -mt-56 -translate-y-1/2 object-contain sm:-left-16 sm:-mt-16 sm:w-24 lg:-left-18 lg:w-32")
                   }
                 />
               ) : null}

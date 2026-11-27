@@ -38,7 +38,7 @@ export function BoxNowBadge() {
     <Link
       href="/shipping"
       aria-label="Безплатна доставка с BOX NOW"
-      className="boxnow-badge fixed top-[6.75rem] right-3 z-[1015] h-[7.5rem] w-[7.5rem] rounded-full drop-shadow-lg max-md:right-2 max-md:h-[4.5rem] max-md:w-[4.5rem]"
+      className="boxnow-badge fixed top-[6.75rem] right-3 z-[1015] h-[7.5rem] w-[7.5rem] rounded-full drop-shadow-lg max-md:right-5 max-md:h-[4.5rem] max-md:w-[4.5rem]"
     >
       <svg viewBox="0 0 200 200" className="block h-full w-full overflow-visible" aria-hidden="true">
         <circle cx="100" cy="100" r="97" fill="var(--color-boxnow-cream)" />

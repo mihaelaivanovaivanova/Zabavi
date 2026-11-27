@@ -135,3 +135,27 @@ h4 {
     transform: scale(1.045);
   }
 }
+
+/* ---- Objections mobile one-at-a-time Q&A (Objections.tsx) ---- */
+
+.objection-bubble-enter {
+  animation: objection-bubble-fade-in 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .objection-bubble-enter {
+    animation: none;
+  }
+}
+
+@keyframes objection-bubble-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

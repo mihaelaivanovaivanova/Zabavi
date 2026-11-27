@@ -36,16 +36,16 @@ export function VariantPriceCard({
       />
       <div className="flex-1">
         <div className="flex items-start justify-between gap-3">
-          <span className="flex items-center gap-2">
+          <span className="flex items-start gap-1">
             <span className="text-lg font-semibold text-ink-900">{variant.label}</span>
             {percentOff !== null ? (
-              <span className="inline-flex items-center rounded-full bg-burgundy-700 px-2 py-0.5 text-xs font-bold text-paper-50">
+              <span className="-ml-0.5 -mt-1.5 inline-flex items-center rounded-full bg-burgundy-700 px-2 py-0.5 text-xs font-bold text-paper-50">
                 -{percentOff}%
               </span>
             ) : null}
           </span>
           <span className="flex flex-col items-end gap-0.5">
-            <span className="text-2xl font-bold text-ink-900">{formatEur(priceEur)}</span>
+            <span className="whitespace-nowrap text-2xl font-bold text-ink-900">{formatEur(priceEur)}</span>
             {compareAtPriceEur !== null && percentOff !== null ? (
               <span className="text-sm text-ink-700 line-through">{formatEur(compareAtPriceEur)}</span>
             ) : null}

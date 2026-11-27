@@ -37,8 +37,8 @@ export default function HomePage() {
         </SelectedVariantProvider>
         <GiftMeaning />
         <Testimonials />
-        <Faq />
         <Objections />
+        <Faq />
         <FinalCta />
       </main>
       <Footer />
