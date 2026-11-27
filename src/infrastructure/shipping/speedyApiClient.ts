@@ -60,6 +60,11 @@ async function postJson(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(withCredentials(config, body)),
+    // Every call here hits Speedy's live API with live data (shipments,
+    // live office/locker lists, tracking) — never something Next.js's own
+    // fetch cache should serve a stale copy of, in case that default ever
+    // applies to a POST call the way it does to GET.
+    cache: "no-store",
   });
 
   const json = (await response.json().catch(() => null)) as Record<string, unknown> | null;
