@@ -18,7 +18,7 @@ afterEach(() => {
 
 describe("OrderActionsPanel", () => {
   it("only offers the order's own allowed next statuses", () => {
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={["paid", "cancelled"]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={["paid", "cancelled"]} carrierLabel="Speedy" />);
 
     expect(screen.getByRole("option", { name: "Платена" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Отказана" })).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe("OrderActionsPanel", () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {} }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={["paid"]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={["paid"]} carrierLabel="Speedy" />);
 
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "paid" } });
     fireEvent.change(screen.getByLabelText("Бележка (незадължително)"), { target: { value: "Платено в брой" } });
@@ -45,8 +45,35 @@ describe("OrderActionsPanel", () => {
     expect(body).toEqual({ status: "paid", note: "Платено в брой" });
   });
 
+  it("shows the carrier and tracking number (or a dash) in a single shipment section", () => {
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" trackingNumber="TRACK-1" />);
+
+    expect(screen.getByText("Speedy")).toBeInTheDocument();
+    expect(screen.getByText("TRACK-1")).toBeInTheDocument();
+  });
+
+  it("shows the shipment status badge when one is given", () => {
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" trackingNumber="TRACK-1" shipmentStatus="accepted" />);
+
+    expect(screen.getByText("Приета от куриера")).toBeInTheDocument();
+  });
+
+  it("shows the carrier tracking history when there are events", () => {
+    render(
+      <OrderActionsPanel
+        orderId="order-1"
+        allowedStatuses={[]}
+        carrierLabel="Speedy"
+        trackingNumber="TRACK-1"
+        shipmentEvents={[{ event: "Приета от куриера", occurredAt: "2026-11-27T09:40:31.000Z" }]}
+      />,
+    );
+
+    expect(screen.getByText(/Приета от куриера/)).toBeInTheDocument();
+  });
+
   it("offers 'Създай пратка' instead of label/cancel when there is no tracking number", () => {
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" />);
     expect(screen.queryByRole("button", { name: "Анулирай пратката" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Изтегли етикет" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Създай пратка" })).toBeInTheDocument();
@@ -56,7 +83,7 @@ describe("OrderActionsPanel", () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {} }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" />);
     fireEvent.click(screen.getByRole("button", { name: "Създай пратка" }));
 
     await waitFor(() => expect(refreshMock).toHaveBeenCalled());
@@ -72,7 +99,7 @@ describe("OrderActionsPanel", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" />);
     fireEvent.click(screen.getByRole("button", { name: "Създай пратка" }));
 
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Speedy credentials are not configured."));
@@ -84,7 +111,7 @@ describe("OrderActionsPanel", () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {} }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={true} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" trackingNumber="TRACK-1" />);
     fireEvent.click(screen.getByRole("button", { name: "Анулирай пратката" }));
 
     await waitFor(() => expect(refreshMock).toHaveBeenCalled());
@@ -99,7 +126,7 @@ describe("OrderActionsPanel", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" />);
     fireEvent.click(screen.getByRole("button", { name: "Изтрий поръчката" }));
 
     expect(fetchMock).not.toHaveBeenCalled();
@@ -110,7 +137,7 @@ describe("OrderActionsPanel", () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { deleted: true } }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} hasTrackingNumber={false} />);
+    render(<OrderActionsPanel orderId="order-1" allowedStatuses={[]} carrierLabel="Speedy" />);
     fireEvent.click(screen.getByRole("button", { name: "Изтрий поръчката" }));
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/admin"));

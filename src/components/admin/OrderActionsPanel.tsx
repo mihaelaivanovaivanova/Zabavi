@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { OrderStatus } from "@/domain/order/types";
+import type { OrderStatus, ShipmentTrackingEvent } from "@/domain/order/types";
+import { type ShipmentStatus, shipmentStatusLabel } from "@/domain/shipping/types";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { TextareaField, inputClasses } from "@/components/ui/Field";
 
@@ -24,12 +26,19 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 export function OrderActionsPanel({
   orderId,
   allowedStatuses,
-  hasTrackingNumber,
+  carrierLabel,
+  trackingNumber,
+  shipmentStatus,
+  shipmentEvents,
 }: {
   orderId: string;
   allowedStatuses: OrderStatus[];
-  hasTrackingNumber: boolean;
+  carrierLabel: string;
+  trackingNumber?: string;
+  shipmentStatus?: ShipmentStatus;
+  shipmentEvents?: ShipmentTrackingEvent[];
 }) {
+  const hasTrackingNumber = Boolean(trackingNumber);
   const router = useRouter();
   const [newStatus, setNewStatus] = useState<OrderStatus | "">("");
   const [note, setNote] = useState("");
@@ -144,6 +153,24 @@ export function OrderActionsPanel({
 
       <section className="rounded-2xl border border-lavender-200 bg-paper-50 p-6">
         <h2 className="text-lg font-semibold text-ink-900">Пратка</h2>
+        <dl className="mt-3 space-y-1 text-sm text-ink-800">
+          <div>
+            <dt className="inline text-ink-700">Превозвач: </dt>
+            <dd className="inline">{carrierLabel}</dd>
+          </div>
+          <div>
+            <dt className="inline text-ink-700">Проследяване №: </dt>
+            <dd className="inline">{trackingNumber ?? "—"}</dd>
+          </div>
+          {shipmentStatus ? (
+            <div>
+              <dt className="inline text-ink-700">Статус: </dt>
+              <dd className="inline">
+                <Badge tone="neutral">{shipmentStatusLabel(shipmentStatus)}</Badge>
+              </dd>
+            </div>
+          ) : null}
+        </dl>
         <div className="mt-3 flex flex-wrap gap-3">
           {hasTrackingNumber ? (
             <>
@@ -172,6 +199,15 @@ export function OrderActionsPanel({
           <p role="alert" className="mt-2 text-sm text-burgundy-600">
             {shipmentState.message}
           </p>
+        ) : null}
+        {shipmentEvents && shipmentEvents.length > 0 ? (
+          <ul className="mt-3 space-y-1 border-t border-lavender-200 pt-3 text-xs text-ink-700">
+            {shipmentEvents.map((event, index) => (
+              <li key={index}>
+                {new Date(event.occurredAt).toLocaleString("bg-BG")} — {event.event}
+              </li>
+            ))}
+          </ul>
         ) : null}
       </section>
 

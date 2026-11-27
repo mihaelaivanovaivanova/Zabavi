@@ -10,7 +10,6 @@ import { kitRepository } from "@/infrastructure/repositories/kitRepository";
 import { orderDisplayStatus, orderStatusDisplay } from "@/lib/orderStats";
 import { formatEur } from "@/lib/format";
 import { allowedTransitions } from "@/domain/order/orderStatusService";
-import { shipmentStatusLabel } from "@/domain/shipping/types";
 import { shippingAddressLine } from "@/infrastructure/email/orderEmails";
 import type { OrderDraft } from "@/domain/order/types";
 
@@ -172,36 +171,6 @@ async function OrderDetailSection({ id }: { id: string }) {
             </table>
           </section>
 
-          <section className="rounded-2xl border border-lavender-200 bg-paper-50 p-6">
-            <h2 className="text-lg font-semibold text-ink-900">Пратка</h2>
-            <dl className="mt-3 space-y-1 text-sm text-ink-800">
-              <div>
-                <dt className="inline text-ink-700">Превозвач: </dt>
-                <dd className="inline">{order.shippingDetails.method === "box_now" ? "BOX NOW" : "Speedy"}</dd>
-              </div>
-              <div>
-                <dt className="inline text-ink-700">Проследяване №: </dt>
-                <dd className="inline">{order.trackingNumber ?? "—"}</dd>
-              </div>
-              {order.shipmentStatus ? (
-                <div>
-                  <dt className="inline text-ink-700">Статус: </dt>
-                  <dd className="inline">
-                    <Badge tone="neutral">{shipmentStatusLabel(order.shipmentStatus)}</Badge>
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
-            {order.shipmentEvents && order.shipmentEvents.length > 0 ? (
-              <ul className="mt-3 space-y-1 border-t border-lavender-200 pt-3 text-xs text-ink-700">
-                {order.shipmentEvents.map((event, index) => (
-                  <li key={index}>
-                    {new Date(event.occurredAt).toLocaleString("bg-BG")} — {event.event}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </section>
         </div>
 
         <div className="space-y-6">
@@ -239,7 +208,10 @@ async function OrderDetailSection({ id }: { id: string }) {
           <OrderActionsPanel
             orderId={order.id}
             allowedStatuses={[...allowedTransitions(order.status)]}
-            hasTrackingNumber={Boolean(order.trackingNumber)}
+            carrierLabel={order.shippingDetails.method === "box_now" ? "BOX NOW" : "Speedy"}
+            trackingNumber={order.trackingNumber}
+            shipmentStatus={order.shipmentStatus}
+            shipmentEvents={order.shipmentEvents}
           />
         </div>
       </div>
